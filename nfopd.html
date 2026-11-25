@@ -297,8 +297,8 @@ footer p { max-width: 90ch; margin: 0 0 6px; }
 // ---------------------------------------------------------------- constants
 const UA = 'NFOPD/1.0 (No Friends On Powder Days snow app; github.com/jmcdannel/nfopd)';
 const MIN = 60e3, H = 3600e3, DAY = 864e5;
-const TABS = ['summary', 'forecast', 'noaa', 'report', 'cams', 'discussion'];
-const TAB_LABEL = { summary: 'Summary', forecast: 'Snow Forecast', noaa: 'NOAA 7-Day', report: 'Snow Report', cams: 'Cams', discussion: 'Discussions' };
+const TABS = ['summary', 'forecast', 'accuracy', 'noaa', 'report', 'cams', 'discussion'];
+const TAB_LABEL = { summary: 'Summary', forecast: 'Snow Forecast', accuracy: 'Accuracy', noaa: 'NOAA 7-Day', report: 'Snow Report', cams: 'Cams', discussion: 'Discussions' };
 const REGIONS = ['Idaho', 'Northern Rockies', 'Utah', 'Colorado', 'Pacific Northwest', 'California & Nevada', 'Southwest', 'Alaska', 'Midwest', 'Northeast', 'Southeast',
   'British Columbia', 'Alberta', 'Quebec', 'Ontario', 'Prairies', 'Atlantic Canada', 'Yukon'];
 const STATE_REGION = { ID: 'Idaho', MT: 'Northern Rockies', WY: 'Northern Rockies', UT: 'Utah', CO: 'Colorado', WA: 'Pacific Northwest', OR: 'Pacific Northwest', CA: 'California & Nevada', NV: 'California & Nevada',
@@ -741,6 +741,8 @@ try { SNAP = JSON.parse($('#pl-snapshot').textContent || '{}'); } catch { SNAP =
 const MEM = new Map();
 const INFLIGHT = new Map();
 // Data this device fetched is also kept in IndexedDB: reused while fresh, and shown (marked stale) when a source is down.
+// Bump CACHE_V whenever a cached data shape changes, so devices drop entries saved by older code.
+const CACHE_V = 'v3:';
 const Disk = {
   db: null,
   open() {
@@ -751,8 +753,8 @@ const Disk = {
     });
     return this.db;
   },
-  async get(k) { const db = await this.open(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch { res(null); } }); },
-  async set(k, v) { const db = await this.open(); if (!db) return; try { db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch { /* full or blocked */ } },
+  async get(k) { const db = await this.open(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('kv').objectStore('kv').get(CACHE_V + k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch { res(null); } }); },
+  async set(k, v) { const db = await this.open(); if (!db) return; try { db.transaction('kv', 'readwrite').objectStore('kv').put(v, CACHE_V + k); } catch { /* full or blocked */ } },
 };
 function memo(key, ttl, fn) {
   if (Net.mode === 'snapshot') {
@@ -1151,7 +1153,8 @@ async function getVerify(r) {
       return { n: rows.length, mae: sum(rows.map(([f, o]) => Math.abs(f - o))) / rows.length, bias: so >= 0.1 ? (sf - so) / so : null, storms: storms.length, caught: storms.filter(x => x[0] >= 0.08).length, falseAlarms: rows.filter(([f, o]) => f >= 0.15 && o < 0.03).length };
     };
     const table = {}; for (const id of ['blend', ...Object.values(ids)]) table[id] = Object.fromEntries(leads.map(l => [l, score(id, l)]));
-    return { station: sn.station, days: days.map(day => ({ d: day, o: round(obs[day], 2), f1: round(fc.blend[1]?.[day], 2), f3: round(fc.blend[3]?.[day], 2) })), table };
+    const depth = {}; (sn.daily || []).forEach((x, i, a) => { if (i + 1 < a.length && x.depth != null && a[i + 1].depth != null) depth[x.d.slice(0, 10)] = Math.max(0, a[i + 1].depth - x.depth); });
+    return { station: sn.station, days: days.map(day => ({ d: day, o: round(obs[day], 2), snow: depth[day] ?? null, f1: round(fc.blend[1]?.[day], 2), f3: round(fc.blend[3]?.[day], 2), f5: round(fc.blend[5]?.[day], 2) })), table };
   });
 }
 
@@ -1459,8 +1462,8 @@ function drawRank() {
 // ---------------------------------------------------------------- Resort page
 // One long page per resort. The sticky section nav jumps to a section and lights up as you scroll;
 // each section loads its data when it comes near the viewport.
-const SECTION_TITLE = { summary: 'This morning', forecast: 'Snow forecast', noaa: 'NOAA 7-day', report: 'Snow report', cams: 'Webcams', discussion: 'Discussions' };
-const NAV_LABEL = { summary: 'Summary', forecast: 'Forecast', noaa: 'NOAA 7-Day', report: 'Report', cams: 'Cams', discussion: 'Discussions' };
+const SECTION_TITLE = { summary: 'This morning', forecast: 'Snow forecast', accuracy: 'Forecast accuracy', noaa: 'NOAA 7-day', report: 'Snow report', cams: 'Webcams', discussion: 'Discussions' };
+const NAV_LABEL = { summary: 'Summary', forecast: 'Forecast', accuracy: 'Accuracy', noaa: 'NOAA 7-Day', report: 'Report', cams: 'Cams', discussion: 'Discussions' };
 let spy = null, lazy = null;
 function renderResort(main, r, tab) {
   spy?.disconnect(); lazy?.disconnect();
@@ -1470,7 +1473,7 @@ function renderResort(main, r, tab) {
     <nav class="jump" aria-label="${esc(r.name)} sections">${TABS.map(t => `<a href="#${r.id}${t === 'summary' ? '' : '-' + t}" data-jump="${t}">${t === 'noaa' && !isUS(r) ? 'Official' : NAV_LABEL[t]}</a>`).join('')}</nav>
     ${TABS.map(t => `<section class="block" id="b-${t}" data-block="${t}" aria-labelledby="bh-${t}">${t === 'summary' ? `<h2 class="visually-hidden" id="bh-${t}">${t === 'noaa' && !isUS(r) ? 'Official forecast' : SECTION_TITLE[t]}</h2>` : `<h2 class="block-title" id="bh-${t}">${t === 'noaa' && !isUS(r) ? 'Official forecast' : SECTION_TITLE[t]}</h2>`}<div class="wrap block-body" id="bb-${t}"><p class="loading">Loading</p></div></section>`).join('')}
   </div>`;
-  const run = { summary: tabSummary, forecast: tabForecast, noaa: tabNoaa, report: tabReport, cams: tabCams, discussion: tabDiscussion };
+  const run = { summary: tabSummary, forecast: tabForecast, accuracy: tabAccuracy, noaa: tabNoaa, report: tabReport, cams: tabCams, discussion: tabDiscussion };
   const started = new Set();
   const start = t => { if (started.has(t)) return; started.add(t); run[t]($('#bb-' + t), r); };
   start('summary');
@@ -1560,10 +1563,9 @@ async function tabForecast(el, r) {
     ${slot('f-chart', 'Daily snowfall', 'NFOPD blend · amber bars show the model range')}
     ${slot('f-models', 'Model by model', 'Inches · Kuchera snow ratio · NWS as issued')}
     ${slot('f-hourly', isUS(r) ? 'NWS hourly, next 7 days' : 'Hourly, next 7 days', isUS(r) ? 'NOAA grid forecast' : 'Canadian GEM model')}
-    ${slot('f-acc', 'Forecast track record', 'Last 30 days · forecast vs measured')}`;
+`;
   el.querySelector('.seg').onclick = e => { const b = e.target.closest('[data-elev]'); if (!b) return; state.elev = b.dataset.elev; store.set('elev', state.elev); tabForecast(el, r); };
   const gridP = settle(getGrid(r)), ensP = settle(getEnsemble(r));
-  accuracyPanel(r);
   const [models] = await Promise.allSettled([getModels(r)]);
   if (!models.value) { fill('f-chart', errBox('Models', models.reason)); fill('f-models', ''); }
   else {
@@ -1597,9 +1599,17 @@ function drawForecast(r, models, grid, elev, ens) {
     </tbody></table></div><p class="mute small" style="margin:0">Blend weights: NWS 3, NBM 3, HRRR 2, ECMWF 2, GFS 1, GEM 1, ICON 1; when four or more models report, the highest and lowest are left out of the average. NBM snowfall is used as issued. NWS covers the official 7-day grid at the forecast point; other models are computed at the ${elev} elevation.</p>`);
   if (!grid) logForecast(r, days);
 }
+function tabAccuracy(el, r) {
+  el.innerHTML = `${slot('a-5', 'Last 5 days: forecast vs what fell', 'NFOPD blend vs the nearest SNOTEL gauge')}${slot('f-acc', 'Last 30 days', 'Storm days caught and bias, by model and lead time')}`;
+  accuracyPanel(r);
+}
 async function accuracyPanel(r) {
   let v;
-  try { v = await getVerify(r); } catch (e) { fill('f-acc', `<p class="empty">${esc(e.message || e)}.</p>`); return; }
+  try { v = await getVerify(r); } catch (e) { fill('a-5', `<p class="empty">${esc(e.message || e)}.${isUS(r) ? '' : ' SNOTEL gauges are US-only, so Canadian resorts have no track record yet.'}</p>`); fill('f-acc', ''); return; }
+  const last = v.days.slice(-5).reverse(), wv = x => x == null ? '<span class="mute">–</span>' : `${fmtWater(x)}"`;
+  fill('a-5', `<div class="table-scroll"><table><thead><tr><th>Day</th><th>Snow measured</th><th>Water measured</th><th>Forecast 1 day before</th><th>3 days before</th><th>5 days before</th></tr></thead><tbody>
+    ${last.map(d => `<tr><td>${esc(dayLabel(d.d).dow)} ${esc(dayLabel(d.d).md)}</td><td><b>${d.snow == null ? '–' : fmtIn(d.snow) + '"'}</b></td><td><b>${wv(d.o)}</b></td><td>${wv(d.f1)}${hitTag(d.f1, d.o)}</td><td>${wv(d.f3)}${hitTag(d.f3, d.o)}</td><td>${wv(d.f5)}${hitTag(d.f5, d.o)}</td></tr>`).join('')}
+    </tbody></table></div><p class="mute small" style="margin:0;max-width:75ch">Snow measured is the depth gain on the ${esc(v.station.name)} snow pillow (${fmtFt(v.station.elev)} ft), which reads low when new snow settles. Water is the gauge's precipitation, compared with the NFOPD blend's precipitation forecast issued 1, 3 and 5 days earlier. Roughly 0.1" of water makes 1" to 1.5" of snow.</p>`);
   const t = v.table, b3 = t.blend?.[3], pct = x => x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(x * 100)}%`;
   const verdict = !b3 ? 'Not enough recent data to score the forecasts yet.'
     : `Over the last ${b3.n} days, forecasts made 3 days ahead caught ${b3.caught} of ${b3.storms} storm day${b3.storms === 1 ? '' : 's'} at ${v.station.name} and ${b3.bias == null ? 'it was too dry to judge their totals' : Math.abs(b3.bias) < 0.1 ? 'came close to the measured totals' : `ran ${Math.round(Math.abs(b3.bias) * 100)}% ${b3.bias > 0 ? 'too wet (more snow than fell)' : 'too dry (less snow than fell)'}`}.`;
@@ -1610,6 +1620,13 @@ async function accuracyPanel(r) {
     <div class="legend"><span><i style="background:var(--snow)"></i>Measured at SNOTEL</span><span><i style="background:var(--lamp);border-radius:50%;width:9px;height:9px"></i>Forecast 1 day ahead</span><span><i style="background:var(--blaze);height:2px"></i>Forecast 3 days ahead</span></div>
     <div class="table-scroll"><table><thead><tr><th>Forecast</th><th>1 day ahead</th><th>3 days ahead</th><th>5 days ahead</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="mute small" style="margin:0;max-width:75ch">Each cell shows storm days caught, then how far total forecast precipitation ran over (+) or under (−) what fell. A storm day is 0.15" or more of water at the ${esc(v.station.name)} SNOTEL gauge (${fmtFt(v.station.elev)} ft), roughly 2" of snow. Forecasts are the model runs issued 1, 3 and 5 days before each day, from Open-Meteo's archive. Amounts are water, not snow depth, because water is what both sides measure the same way.</p>`);
+}
+const fmtWater = x => x < 0.005 ? '0' : x < 1 ? x.toFixed(2).replace(/^0/, '') : x.toFixed(1);
+// Close call (within 0.05" of water or 30%), wet (forecast more than fell) or dry (less).
+function hitTag(f, o) {
+  if (f == null || o == null) return '';
+  const close = Math.abs(f - o) <= Math.max(0.05, o * 0.3);
+  return close ? ' <span class="pill good" style="font-size:11px;padding:0 6px">close</span>' : f > o ? ' <span class="pill warn" style="font-size:11px;padding:0 6px">too wet</span>' : ' <span class="pill bad" style="font-size:11px;padding:0 6px">too dry</span>';
 }
 function accChart(days) {
   const bw = 16, gap = 6, padL = 40, padR = 10, padT = 12, padB = 30, Hh = 170, W = padL + padR + days.length * (bw + gap);
@@ -1833,11 +1850,12 @@ function useSnapshot() {
 // Snapshot export (used to embed a saved copy into the published page).
 window.NFOPD = {
   async prefetch(ids) {
-    await getFinder();
+    await getFinder('Idaho');
     for (const id of ids) {
       const r = RBYID[id];
       const pts = await getPoints(r).catch(() => null);
-      await Promise.allSettled([getModels(r), getGrid(r), getHourlyModel(r), getSnotel(r), getAvy(r), getReport(r), getAlerts(r), getNwsForecast(r), getObs(r), pts && getAfd(pts.cwa)]);
+      await Promise.allSettled([getModels(r), getGrid(r), getHourlyModel(r), getSnotel(r), getAvy(r), getReport(r), getAlerts(r), getNwsForecast(r), getObs(r), getEnsemble(r), pts && getAfd(pts.cwa)]);
+      await getVerify(r).catch(() => {});
     }
     return [...MEM.keys()].length;
   },
