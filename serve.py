@@ -70,7 +70,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             headers = {"User-Agent": UA, "Accept": (q.get("accept") or ["*/*"])[0]}
             try:
                 with urllib.request.urlopen(urllib.request.Request(target, headers=headers), timeout=40) as r:
-                    return self.send(r.status, r.read(), r.headers.get("Content-Type", "application/octet-stream"))
+                    return self.send(r.status, r.read(), r.headers.get("Content-Type", "application/octet-stream"),
+                                     {"Content-Security-Policy": "default-src 'none'; sandbox"})
             except urllib.error.HTTPError as e:
                 return self.send(e.code, e.read() or str(e).encode())
             except Exception as e:  # network errors, timeouts

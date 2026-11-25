@@ -11,7 +11,13 @@ const ALLOW = [
   // webcam image hosts
   'ytimg.com', 'storage.googleapis.com', 'hdrelay.com', 'roundshot.com', 'ipcamlive.com', 'yellowstone.ai',
   'd1xrbm8v2c14yb.cloudfront.net', 'seejh.com', 'brownrice.com', 'snow.com', 'ozolio.com', 'hdrelay.io', 'b-cdn.net', 'redresort.com', 'panoramaresort.com', 'sunpeaksresort.com',
-  'coppercolorado.com', 'eldora.com', 'brightonresort.com', 'snowbasin.com', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
+  'coppercolorado.com', 'eldora.com', 'brightonresort.com', 'snowbasin.com',
+  'alta.com', 'digitaloceanspaces.com', 'prismcam.com', 'snowbird.com', 'powdermountain.com', 'ixnay.net', 'sundanceresort.com', 'jacksonhole.com', 'zaneray.com',
+  'bigskyresort.com', 'amazonaws.com', 'bridgerbowl.com', 'skiwhitefish.com', 'arapahoebasin.com', 'azurefd.net', 'aspensnowmass.com', 'tellurideskiresort.com',
+  'wolfcreekski.com', 'skiloveland.com', 'webcam.io', 'skimonarch.com', 'purgatory.ski', 'skitaos.com', 'skisantafe.com', 'snowbowl.ski', 'summitatsnoqualmie.com',
+  'missionridge.com', 'mtbachelor.com', 'skihood.com', 'wetmet.net', 'timberlinelodge.com', 'skirose.com', 'revelstokemountainresort.com', 'skircr.com',
+  'kickinghorseresort.com', 'skifernie.com', 'skikimberley.com', 'skinakiska.com', 'skiwhitewater.com', 'whitewatermountainresort.com', 'skisilverstar.com',
+  'skibanff.com', 'skimarmot.com', 'banffnorquay.com', 'mtbaker.us', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
 ];
 // How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
 const TTL = [
@@ -40,6 +46,8 @@ module.exports = async (req, res) => {
     const type = r.headers.get('content-type') || 'application/octet-stream';
     res.statusCode = r.status;
     res.setHeader('Content-Type', type);
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox"); // proxied bytes never run as a page here
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', r.ok ? `public, max-age=60, s-maxage=${ttlFor(target.href, type)}, stale-while-revalidate=1800` : 'no-store');
     res.end(body);
   } catch (e) {
