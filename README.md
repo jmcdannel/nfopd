@@ -24,9 +24,11 @@ The whole app is one file, `nfopd.html`.
 - **Avalanche danger**: avalanche.org centers (US) and Avalanche Canada.
 - **Resorts**: each resort's own snow report and webcam images (see `REPORTS` and `CAMS` in `nfopd.html`).
 - **Ski area list**: [OpenSkiMap](https://openskimap.org), data © OpenStreetMap contributors (ODbL).
+- **Local forecasters**: each avalanche center's mountain-weather discussion (avalanche.org), plus the latest post from free independent forecasters: Jim Steenburgh (Wasatch Weather Weenies), Chris Tomer, Mike Weissbluth (SnowAlarm), Cliff Mass, Daniel Swain (Weather West), Jim Woodmencey (MountainWeather.com) and Powderchasers. NFOPD shows a short excerpt and links to the original. NWAC, CAIC, Utah Avalanche Center and Avalanche Canada weather forecasts are linked, not fetched.
 
 ## What NFOPD adds
 
+- **NFOPD Daily.** A short regional snow discussion for each western region, written by AI from the latest NWS Area Forecast Discussions and NBM/GFS/ECMWF summit snowfall (`api/daily.js`). It runs through Vercel AI Gateway on a zero-cost model (NVIDIA Nemotron 3.5 Lightning), authenticated with the deployment's OIDC token, so it needs no API key and costs nothing. Each region is regenerated at most every 6 hours (edge cache). Set `NFOPD_DAILY_MODEL` (for example `anthropic/claude-haiku-5.5`) to use a paid model once AI Gateway credits are added.
 - **NFOPD blend.** A weighted blend of NWS (3), NBM (3), HRRR (2), ECMWF (2), GFS (1), GEM (1) and ICON (1), shown with the model range. With four or more models, the single highest and lowest are left out of the average, so one runaway model can't drive the number.
 - **Odds and confidence out to 15 days.** For the next 5 days, days 6–10 and days 11–15: the likely range (10th to 90th percentile across 82 ensemble runs), the chance of 1", 6" and 12"+, and a 0–100 confidence score (the share of runs within 40% or 1" of the middle run).
 - **Track record.** For each resort with a nearby SNOTEL gauge, what the models forecast 1, 3 and 5 days ahead over the last 30 days, compared with the water the gauge measured. You see storm days caught and whether forecasts ran wet or dry.

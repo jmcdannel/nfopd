@@ -18,6 +18,8 @@ const ALLOW = [
   'missionridge.com', 'mtbachelor.com', 'skihood.com', 'wetmet.net', 'timberlinelodge.com', 'skirose.com', 'revelstokemountainresort.com', 'skircr.com',
   'kickinghorseresort.com', 'skifernie.com', 'skikimberley.com', 'skinakiska.com', 'skiwhitewater.com', 'whitewatermountainresort.com', 'skisilverstar.com',
   'skibanff.com', 'skimarmot.com', 'banffnorquay.com', 'mtbaker.us', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
+  // independent forecasters' feeds (NFOPD shows short excerpts and links back)
+  'blogspot.com', 'snowalarm.com', 'weatherwest.com', 'powderchasers.com', 'youtube.com', 'mountainweather.com',
 ];
 // How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
 const TTL = [
@@ -30,6 +32,7 @@ const TTL = [
   [/radar\.weather\.gov/, 300],
   [/wcc\.sc\.egov\.usda\.gov/, 1800],                    // SNOTEL readings are hourly
   [/avalanche\.(org|ca)|weather\.gc\.ca/, 900],
+  [/blogspot\.com|snowalarm\.com|weatherwest\.com|powderchasers\.com|youtube\.com\/feeds|mountainweather\.com/, 1800], // forecaster feeds
 ];
 const ttlFor = (url, type) => type.startsWith('image/') ? 120 : (TTL.find(([re]) => re.test(url))?.[1] ?? 600); // resort reports: 10 min
 const allowed = host => ALLOW.some(d => host === d || host.endsWith('.' + d));

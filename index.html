@@ -273,6 +273,15 @@ dialog.viewer::backdrop { background: rgba(4,8,14,.8); }
 .daily-bets b { display: block; font: 700 15px/1.2 var(--f-sign); letter-spacing: .02em; }
 .daily-foot { font-size: 12px; color: var(--dim); margin: 0; line-height: 1.6; }
 .daily-foot a { color: var(--mute); }
+.experts { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; max-width: 76ch; }
+.experts li { border-top: 1px solid var(--rule); padding-top: 12px; }
+.experts li:first-child { border-top: 0; padding-top: 0; }
+.experts .who { font: 600 13px/1.4 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--lamp); }
+.experts .who span { color: var(--dim); letter-spacing: .02em; text-transform: none; font: 400 13px/1.4 var(--f-body, inherit); }
+.experts a.t { display: block; font: 700 18px/1.25 var(--f-sign); color: var(--snow); text-decoration: none; margin: 3px 0; }
+.experts a.t:hover { text-decoration: underline; text-decoration-color: var(--blaze); }
+.experts p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--mute); }
+.experts .more { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
 .daily-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .daily-pick button { font: 600 13px/1 var(--f-sign); letter-spacing: .06em; text-transform: uppercase; padding: 8px 10px; border-radius: 3px; border: 1px solid var(--rule-2); background: none; color: var(--mute); cursor: pointer; }
 .daily-pick button[aria-pressed="true"] { color: var(--snow); border-color: var(--blaze); box-shadow: inset 0 -2px 0 var(--blaze); }
@@ -1003,12 +1012,14 @@ const Disk = {
   open() {
     if (this.db !== null) return this.db;
     this.db = new Promise(res => {
-      try { const q = indexedDB.open('nfopd-cache', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }
+      // A blocked or hung IndexedDB (private windows, a pending delete) must not stall the app: give up after 1.5 s.
+      setTimeout(() => res(null), 1500);
+      try { const q = indexedDB.open('nfopd-cache', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => res(q.result); q.onerror = q.onblocked = () => res(null); }
       catch { res(null); }
     });
     return this.db;
   },
-  async get(k) { const db = await this.open(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('kv').objectStore('kv').get(CACHE_V + k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch { res(null); } }); },
+  async get(k) { const db = await this.open(); if (!db) return null; return new Promise(res => { try { const q = db.transaction('kv').objectStore('kv').get(CACHE_V + k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); setTimeout(() => res(null), 1500); } catch { res(null); } }); },
   async set(k, v) { const db = await this.open(); if (!db) return; try { db.transaction('kv', 'readwrite').objectStore('kv').put(v, CACHE_V + k); } catch { /* full or blocked */ } },
 };
 function memo(key, ttl, fn) {
@@ -1163,6 +1174,69 @@ function dailyHtml(d) {
     ${d.bestBets?.length ? `<ul class="daily-bets" aria-label="Best bets">${d.bestBets.map(b => `<li><b>${esc(b.where)}</b>${esc(b.why)}</li>`).join('')}</ul>` : ''}
     <p class="daily-foot">Written by AI (${esc(d.model || 'Claude')}) from the NWS forecasters' own discussions and model output, not by a person. Check the sources before you bet a sick day on it. Sources: ${src}</p>
   </div>`;
+}
+// Local forecasters: people who write about the region's weather for free. NFOPD shows a short excerpt
+// and links to the original; it never republishes their posts.
+const PCHASE = { by: 'Powderchasers', what: 'West-wide powder forecast', feed: 'https://powderchasers.com/blogs/powderchasers-forecasts.atom' };
+const EXPERTS = {
+  'Idaho': [PCHASE],
+  'Northern Rockies': [{ by: 'Jim Woodmencey', what: 'MountainWeather.com, Jackson Hole', feed: 'https://www.mountainweather.com/feed/' }, PCHASE],
+  'Utah': [{ by: 'Jim Steenburgh', what: 'Wasatch Weather Weenies · University of Utah', feed: 'https://wasatchweatherweenies.blogspot.com/feeds/posts/default?max-results=3' }, PCHASE],
+  'Colorado': [{ by: 'Chris Tomer', what: 'Mountain weather video', feed: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCb8JPkld8YoOd2n6qAZ2aoQ', video: true },
+    { by: 'Mike Weissbluth', what: 'SnowAlarm, Steamboat', feed: 'https://www.snowalarm.com/blog/?x=feed:atom' }, PCHASE],
+  'Pacific Northwest': [{ by: 'Cliff Mass', what: 'Weather blog · University of Washington', feed: 'https://cliffmass.blogspot.com/feeds/posts/default?max-results=3' }, PCHASE],
+  'California & Nevada': [{ by: 'Daniel Swain', what: 'Weather West', feed: 'https://weatherwest.com/feed' }, PCHASE],
+  'Southwest': [PCHASE], 'Alaska': [], 'British Columbia': [PCHASE], 'Alberta': [PCHASE],
+};
+// Written mountain-weather forecasts that have no feed NFOPD may read; linked, not fetched.
+const EXPERT_LINKS = {
+  'Utah': [['Utah Avalanche Center weather', 'https://utahavalanchecenter.org/weather']],
+  'Colorado': [['CAIC mountain weather forecast', 'https://avalanche.state.co.us/forecasts/weather']],
+  'Pacific Northwest': [['NWAC Mountain Weather Forecast', 'https://nwac.us/mountain-weather-forecast/']],
+  'British Columbia': [['Avalanche Canada Mountain Weather Forecast', 'https://avalanche.ca/en/weather/forecast']],
+  'Alberta': [['Avalanche Canada Mountain Weather Forecast', 'https://avalanche.ca/en/weather/forecast']],
+};
+const stripHtml = h => { const d = new DOMParser().parseFromString('<body>' + String(h || '').replace(/<\/?(p|div|br|li|h[1-6]|tr|td)\b[^>]*>/gi, ' $&') + '</body>', 'text/html'); return (d.body.textContent || '').replace(/\s+/g, ' ').trim(); };
+// Atom often carries HTML escaped once more as text; strip twice when the first pass leaves tags behind.
+const feedText = h => { const t = stripHtml(h); return /<[a-z!\/]/i.test(t) ? stripHtml(t) : t; };
+const clip = (t, n) => t.length <= n ? t : t.slice(0, t.lastIndexOf(' ', n) > n * .6 ? t.lastIndexOf(' ', n) : n) + '…';
+// Atom and RSS, read with regexes because some of these feeds are not well-formed XML.
+function parseFeed(xml) {
+  const tag = (blk, names) => { for (const n of names) { const m = blk.match(new RegExp(`<${n}(?:\\s[^>]*)?>([\\s\\S]*?)</${n}>`, 'i')); if (m) return m[1].replace(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/, '$1'); } return ''; };
+  const blocks = xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || xml.match(/<item[\s>][\s\S]*?<\/item>/gi) || [];
+  return blocks.slice(0, 3).map(b => {
+    const href = (b.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)/i) || b.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']alternate/i) || b.match(/<link[^>]*href=["']([^"']+)/i) || [])[1] || feedText(tag(b, ['link']));
+    return { title: feedText(tag(b, ['title'])), url: href, date: feedText(tag(b, ['published', 'pubDate', 'updated', 'dc:date'])),
+      text: clip(feedText(tag(b, ['media:description', 'summary', 'description', 'content:encoded', 'content'])), 240) };
+  }).filter(x => x.title && httpsUrl(x.url));
+}
+async function getExpert(src) {
+  return memo('expert:' + src.feed, 30 * MIN, async () => parseFeed(await Net.text(src.feed, { accept: 'application/atom+xml, application/rss+xml, text/xml, */*' })));
+}
+// The avalanche center's own mountain-weather discussion for the resort's zone (avalanche.org).
+async function getAvyWeather(a) {
+  if (!a?.centerId || a.zoneId == null) return null;
+  return memo(`avywx:${a.centerId}:${a.zoneId}`, 60 * MIN, async () => {
+    const j = await Net.json(`https://api.avalanche.org/v2/public/product?type=weather&center_id=${encodeURIComponent(a.centerId)}&zone_id=${encodeURIComponent(a.zoneId)}`);
+    const text = stripHtml(j?.weather_discussion);
+    return text ? { author: j.author || '', time: j.published_time, text: clip(text, 420), center: j.avalanche_center?.name || a.center, url: httpsUrl(a.link) || httpsUrl(j.avalanche_center?.url) } : null;
+  });
+}
+const FRESH = 21 * DAY;
+async function expertsHtml(region, avy) {
+  const srcs = EXPERTS[region] || [];
+  const [wx, ...feeds] = await Promise.all([avy ? getAvyWeather(avy).catch(() => null) : null, ...srcs.map(s => getExpert(s).catch(() => null))]);
+  const when = t => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+  const items = [];
+  if (wx && Date.now() - new Date(wx.time) < 10 * DAY)
+    items.push(`<li><div class="who">${esc(wx.center)} <span>· mountain weather${wx.author ? ' by ' + esc(wx.author) : ''} · ${esc(when(wx.time))}</span></div><p>${esc(wx.text)}</p>${wx.url ? `<a href="${esc(wx.url)}" target="_blank" rel="noopener">Read the full forecast ${ICON.out}</a>` : ''}</li>`);
+  srcs.forEach((s, i) => {
+    const post = (feeds[i] || []).find(x => Date.now() - new Date(x.date) < FRESH);
+    if (post) items.push(`<li><div class="who">${esc(s.by)} <span>· ${esc(s.what)} · ${esc(when(post.date))}</span></div><a class="t" href="${esc(post.url)}" target="_blank" rel="noopener">${esc(post.title)}${s.video ? ' ▶' : ''}</a>${post.text && !s.video ? `<p>${esc(post.text)}</p>` : ''}</li>`);
+  });
+  const links = (EXPERT_LINKS[region] || []).map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)} ${ICON.out}</a>`);
+  if (!items.length && !links.length) return '<p class="empty">No independent forecaster has posted about this region in the last three weeks.</p>';
+  return `${items.length ? `<ul class="experts">${items.join('')}</ul>` : '<p class="empty">No recent posts from this region\'s independent forecasters.</p>'}${links.length ? `<p class="more" style="margin-top:12px">${links.join('')}</p>` : ''}<p class="daily-foot" style="margin-top:10px">Excerpts link to each forecaster's own site. Their words, their copyright.</p>`;
 }
 function dailyErr(e) {
   return `<p class="empty">NFOPD Daily isn't available right now${e?.message ? ` (${esc(e.message)})` : ''}. The NWS forecaster discussions on each resort page are always there.</p>`;
@@ -1340,7 +1414,7 @@ async function getAvy(r) {
     if (!f) { const c = j.features.map(x => ({ x, d: nearKm(r, x.geometry) })).sort((a, b) => a.d - b.d)[0]; if (c && c.d < 50) f = c.x; }
     if (!f) return null;
     const p = f.properties;
-    return { zone: p.name, center: p.center, centerId: p.center_id, danger: p.danger, level: p.danger_level, advice: p.travel_advice, link: p.link,
+    return { zone: p.name, zoneId: f.id, center: p.center, centerId: p.center_id, danger: p.danger, level: p.danger_level, advice: p.travel_advice, link: p.link,
       offSeason: p.off_season, start: p.start_date, end: p.end_date, inside };
   });
 }
@@ -1747,6 +1821,8 @@ function renderHome(main) {
       <div class="sec-head"><h2>NFOPD Daily</h2><span class="src">AI-written from NWS forecaster discussions and the models · updates a few times a day</span></div>
       <div class="daily-pick" role="group" aria-label="Region">${WEST.map(g => `<button type="button" data-daily="${esc(g)}" aria-pressed="${g === dailyRegion()}">${esc(g)}</button>`).join('')}</div>
       <div id="daily-body"><p class="loading">Loading</p></div>
+      <h3 class="home-sub" style="margin:22px 0 10px">From local forecasters</h3>
+      <div id="experts-body"><p class="loading">Loading</p></div>
     </section>
     <h2 class="home-h">Where it's snowing</h2>
     <div class="favstrip" id="favstrip"></div>
@@ -1785,6 +1861,8 @@ async function drawDaily() {
   const g = dailyRegion();
   document.querySelectorAll('[data-daily]').forEach(b => b.setAttribute('aria-pressed', b.dataset.daily === g));
   body.innerHTML = '<p class="loading">Loading</p>';
+  const ex = $('#experts-body'); if (ex) ex.innerHTML = '<p class="loading">Loading</p>';
+  expertsHtml(g, null).then(h => { if (dailyRegion() === g && $('#experts-body')) $('#experts-body').innerHTML = h; }, () => { if ($('#experts-body')) $('#experts-body').innerHTML = ''; });
   try { const d = await getDaily(g); if (dailyRegion() === g) body.innerHTML = dailyHtml(d); }
   catch (e) { if (dailyRegion() === g) body.innerHTML = dailyErr(e); }
 }
@@ -2132,10 +2210,11 @@ $('#viewer').onclick = e => { if (e.target.id === 'viewer') $('#viewer').close()
 
 async function tabDiscussion(el, r) {
   const daily = WEST.includes(r.region);
-  el.innerHTML = `${daily ? slot('d-daily', 'NFOPD Daily · ' + r.region, 'AI-written from NWS discussions and the models') : ''}${slot('d-avy', 'Avalanche forecast', isUS(r) ? 'avalanche.org' : 'Avalanche Canada')}${slot('d-afd', 'Forecaster discussion', 'NWS Area Forecast Discussion')}`;
+  el.innerHTML = `${daily ? slot('d-daily', 'NFOPD Daily · ' + r.region, 'AI-written from NWS discussions and the models') : ''}${daily ? slot('d-experts', 'Local forecasters', 'Independent forecasters and the avalanche center') : ''}${slot('d-avy', 'Avalanche forecast', isUS(r) ? 'avalanche.org' : 'Avalanche Canada')}${slot('d-afd', 'Forecaster discussion', 'NWS Area Forecast Discussion')}`;
   if (daily) getDaily(r.region).then(d => fill('d-daily', dailyHtml(d)), e => fill('d-daily', dailyErr(e)));
   const [avy, pts] = await Promise.allSettled([getAvy(r), isUS(r) ? getPoints(r) : Promise.resolve(null)]);
   const a = avy.value;
+  if (daily) expertsHtml(r.region, isUS(r) ? a : null).then(h => fill('d-experts', h), e => fill('d-experts', errBox('Local forecasters', e)));
   fill('d-avy', a ? `<p style="margin:0">${avyChip(a)} <b style="margin-left:8px">${esc(a.center)}</b> · ${esc(a.zone)}${a.inside ? '' : ' <span class="mute small">(nearest zone)</span>'}</p><p style="margin:0;max-width:70ch">${esc(a.advice)}</p>${httpsUrl(a.link) ? `<a href="${esc(a.link)}" target="_blank" rel="noopener">Read the full avalanche forecast ${ICON.out}</a>` : ''}${a.bands?.length ? `<p class="mute small" style="margin:0">${a.bands.map(([b, v]) => `${esc(b)}: ${esc(v || 'no rating')}`).join(' · ')}</p>` : ''}`
     : avy.reason ? errBox('Avalanche forecast', avy.reason) : '<p class="empty">No avalanche forecast zone near this resort.</p>');
   if (!isUS(r)) { fill('d-afd', `<p class="empty">Environment Canada doesn't publish forecaster discussions for individual points. The Avalanche Canada forecast above carries the forecaster's notes for this area.</p>`); return; }
