@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
   } catch (e) {
     res.statusCode = e.status || 502;
     res.setHeader('Cache-Control', 'public, s-maxage=600'); // don't hammer the gateway while it's failing
-    res.end(JSON.stringify({ error: e.expose ? e.message : 'The discussion could not be generated right now' }));
+    res.end(JSON.stringify({ error: e.expose ? e.message : 'The discussion could not be generated right now', ...(e.detail ? { detail: e.detail } : {}) }));
     console.error('daily', region, e.status || '', e.message);
   }
 };

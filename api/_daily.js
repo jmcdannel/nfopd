@@ -130,9 +130,13 @@ async function buildDaily(region, apiKey) {
       if (msg.stop_reason === 'refusal') throw new Error('refused');
       out = parseJson(msg.content.filter(b => b.type === 'text').map(b => b.text).join(''));
       used = model; break;
-    } catch (e) { lastErr = e; console.error('daily model failed', model, e.status || '', String(e.message).slice(0, 300)); }
+    } catch (e) {
+      // Keep a short, non-secret reason (status and error type) so failures can be diagnosed from the response.
+      lastErr = `${model.split('/')[1]}: ${e.status || ''} ${e.error?.error?.type || e.error?.type || e.name || ''}`.trim();
+      console.error('daily model failed', model, e.status || '', String(e.message).slice(0, 300));
+    }
   }
-  if (!out) throw Object.assign(lastErr || new Error('No model answered'), { status: 502, expose: false });
+  if (!out) throw Object.assign(new Error('No model answered'), { status: 502, detail: lastErr });
   return {
     region, generated: now, model: MODEL_NAME[used] || used,
     ...out,
