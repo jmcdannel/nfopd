@@ -23,7 +23,14 @@ SKELETON = (
     "body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>"
     "</head><body>"
 )
-(HERE / "index.html").write_text(SKELETON + page + "</body></html>\n", "utf-8")
+# Vercel Web Analytics and Speed Insights (website only; they report once enabled in the Vercel dashboard).
+ANALYTICS = (
+    "<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>"
+    '<script defer src="/_vercel/insights/script.js"></script>'
+    "<script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>"
+    '<script defer src="/_vercel/speed-insights/script.js"></script>'
+)
+(HERE / "index.html").write_text(SKELETON + page + ANALYTICS + "</body></html>\n", "utf-8")
 print("index.html written")
 
 snap_path = HERE / "snapshot.json"
