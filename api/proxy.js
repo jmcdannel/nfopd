@@ -1,9 +1,9 @@
-// Powderline data proxy (Vercel function). Fetches only from the forecast, observation,
+// NFOPD data proxy (Vercel function). Fetches only from the forecast, observation,
 // avalanche and resort hosts the app reads, adds the User-Agent NWS asks for, and lets
 // Vercel's edge cache absorb repeat requests. It is not a general-purpose proxy.
-const UA = 'Powderline/1.0 (personal snow forecast app; https://github.com/jmcdannel/powderline)';
+const UA = 'NFOPD/1.0 (No Friends On Powder Days snow app; https://github.com/jmcdannel/nfopd)';
 const ALLOW = [
-  'weather.gov', 'open-meteo.com', 'wcc.sc.egov.usda.gov', 'avalanche.org',
+  'weather.gov', 'open-meteo.com', 'wcc.sc.egov.usda.gov', 'avalanche.org', 'weather.gc.ca', 'avalanche.ca',
   // resort reports and feeds
   'tamarackidaho.com', 'brundage.com', 'bogusbasin.org', 'payettelakesskiclub.org', 'sunvalley.com', 'schweitzer.com',
   'mtnfeed.com', 'mtnpowder.com', 'silvermt.com', 'skilookout.com', 'losttrail.com', 'snocountry.com', 'pomerelle.com',
@@ -12,6 +12,19 @@ const ALLOW = [
   'ytimg.com', 'storage.googleapis.com', 'hdrelay.com', 'roundshot.com', 'ipcamlive.com', 'yellowstone.ai',
   'd1xrbm8v2c14yb.cloudfront.net', 'seejh.com', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
 ];
+// How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
+const TTL = [
+  [/wcc\.sc\.egov\.usda\.gov\/.*\/stations\?/, 86400], // SNOTEL station list
+  [/previous-runs-api|ensemble-api/, 3600],                 // model archives and ensembles update a few times a day
+  [/open-meteo\.com/, 1800],
+  [/api\.weather\.gov\/points/, 86400],
+  [/api\.weather\.gov\/alerts/, 300],
+  [/api\.weather\.gov/, 900],                             // grid, 7-day, observations, discussions
+  [/radar\.weather\.gov/, 300],
+  [/wcc\.sc\.egov\.usda\.gov/, 1800],                    // SNOTEL readings are hourly
+  [/avalanche\.(org|ca)|weather\.gc\.ca/, 900],
+];
+const ttlFor = (url, type) => type.startsWith('image/') ? 120 : (TTL.find(([re]) => re.test(url))?.[1] ?? 600); // resort reports: 10 min
 const allowed = host => ALLOW.some(d => host === d || host.endsWith('.' + d));
 
 module.exports = async (req, res) => {
@@ -26,7 +39,7 @@ module.exports = async (req, res) => {
     const type = r.headers.get('content-type') || 'application/octet-stream';
     res.statusCode = r.status;
     res.setHeader('Content-Type', type);
-    res.setHeader('Cache-Control', r.ok ? `public, s-maxage=${type.startsWith('image/') ? 60 : 300}, stale-while-revalidate=600` : 'no-store');
+    res.setHeader('Cache-Control', r.ok ? `public, max-age=60, s-maxage=${ttlFor(target.href, type)}, stale-while-revalidate=1800` : 'no-store');
     res.end(body);
   } catch (e) {
     res.statusCode = 502;

@@ -1,52 +1,75 @@
-# Powderline
+# NFOPD: No Friends On Powder Days
 
-A personal snow forecast app: NOAA forecasts, model blends, resort snow reports and webcams in one place. The whole app is one file, `powderline.html`.
+<img src="brand/nfopd-mark.svg" width="72" alt="NFOPD mark: a lone set of ski tracks in fresh powder below a snow stake">
 
-## Three ways to run it
+Snow forecasts for the pre-dawn powder check. NOAA-first forecasts, a multi-model blend with real odds, each resort's own snow report and webcams, and a public track record of how the forecasts did. Covers every operating downhill area in the US and Canada, with hand-checked snow reports and cams for Idaho.
+
+The whole app is one file, `nfopd.html`.
+
+## Ways to run it
 
 | How | What you get |
 | --- | --- |
-| **Install as a Claude desktop app** (open the published artifact in the Claude desktop app, click **Install as app**, then **Allow live data**) | Everything, live. Data is fetched with `curl` on your Mac. Downloads are cached in your temp folder and forecast history is kept in `~/Library/Application Support/Powderline/history`. |
+| **Vercel** (this repo deploys as-is) | Everything, live. `api/proxy.js` fetches from the forecast, observation, avalanche and resort hosts the app uses, and nothing else. |
 | **Local server**: `python3 serve.py`, then open http://127.0.0.1:8765 | Everything, live, in any browser. Python 3 standard library only. |
-| **Open the published page in a browser** | The saved snapshot only: forecasts and reports as of the last publish. |
+| **Claude desktop app** (open the published artifact in the Claude desktop app, click **Install as app**, then **Allow live data**) | Everything, live, fetched with `curl` on your Mac. Forecast history is kept in `~/Library/Application Support/NFOPD/history`. |
+| **Published artifact in a browser** | The saved snapshot only. |
 
 ## Data sources
 
-- **NOAA / National Weather Service** (api.weather.gov): official grid forecast (hourly snowfall, temperature, snow level, wind), the 7-day point forecast (the same one weather.gov's MapClick page shows), current observations, watches and warnings, Area Forecast Discussions, and RIDGE radar loops.
-- **Weather models** via Open-Meteo: NOAA's NBM, HRRR and GFS, plus ECMWF, GEM and ICON. The past 7 days come from the same models.
-- **USDA NRCS SNOTEL**: observed snow depth and snow water at the nearest station, ranked by distance and elevation.
-- **avalanche.org**: danger rating and travel advice for the forecast zone that contains the resort.
-- **Resort websites**: each resort's own snow report and webcam images (see `REPORTS` and `CAMS` in `powderline.html`).
+- **NOAA / National Weather Service** (US): the official grid forecast (hourly snowfall, temperature, snow level, wind), the 7-day point forecast (the same one weather.gov's MapClick page shows), observations, watches and warnings, Area Forecast Discussions, and RIDGE radar loops.
+- **Environment and Climate Change Canada** (Canada): the official city forecast nearest each resort, with current conditions and alerts.
+- **Weather models** via Open-Meteo: NOAA's NBM, HRRR and GFS, plus ECMWF, GEM and ICON. Also the GEFS (31 runs) and ECMWF (51 runs) ensembles, and an archive of past model runs.
+- **USDA NRCS SNOTEL**: observed snow depth, snow water and precipitation at the nearest station.
+- **Avalanche danger**: avalanche.org centers (US) and Avalanche Canada.
+- **Resorts**: each resort's own snow report and webcam images (see `REPORTS` and `CAMS` in `nfopd.html`).
+- **Ski area list**: [OpenSkiMap](https://openskimap.org), data © OpenStreetMap contributors (ODbL).
 
-## What Powderline adds
+## What NFOPD adds
 
-- **Powderline blend.** A weighted blend of NWS (3), NBM (3), HRRR (2), ECMWF (2), GFS (1), GEM (1) and ICON (1), shown with the model range and a confidence label. With four or more models, the single highest and lowest are left out of the average, so one runaway model can't drive the number.
-- **Kuchera snow ratio.** Models delivered as liquid × 7 are converted to snow with a temperature-based ratio. NBM already carries NOAA's own snow ratio, so its snowfall is used as issued. A snow-quality label (Dense, Average, Light, Blower) comes from the blended ratio.
+- **NFOPD blend.** A weighted blend of NWS (3), NBM (3), HRRR (2), ECMWF (2), GFS (1), GEM (1) and ICON (1), shown with the model range. With four or more models, the single highest and lowest are left out of the average, so one runaway model can't drive the number.
+- **Odds and confidence out to 15 days.** For the next 5 days, days 6–10 and days 11–15: the likely range (10th to 90th percentile across 82 ensemble runs), the chance of 1", 6" and 12"+, and a 0–100 confidence score (the share of runs within 40% or 1" of the middle run).
+- **Track record.** For each resort with a nearby SNOTEL gauge, what the models forecast 1, 3 and 5 days ahead over the last 30 days, compared with the water the gauge measured. You see storm days caught and whether forecasts ran wet or dry.
+- **Kuchera snow ratio.** Models delivered as liquid × 7 are converted to snow with a temperature-based ratio. NBM already carries NOAA's own snow ratio, so its snowfall is used as issued.
 - **Three-way 24-hour check.** The resort's reported new snow, the SNOTEL depth gain and the model estimate, side by side.
-- **Snow level against the mountain.** The NWS snow level is plotted against base and summit elevation, so you can see when rain reaches the base.
-- **Forecast scoring** (desktop app). Each day's forecast is saved and later compared with SNOTEL observations.
+- **Snow level against the mountain.** The snow level is plotted against base and summit elevation.
 
-## Idaho resort coverage
+## Brand
+
+| | |
+| --- | --- |
+| Name | **NFOPD**, short for No Friends On Powder Days |
+| Mark | `brand/nfopd-mark.svg`: a blaze-orange snow stake above fresh powder, carved by one lone set of tracks |
+| Wordmark | NFOPD in Barlow Condensed ExtraBold Italic: NFO in snow white, PD in powder blue `#6FB4FF` with a snow-white cap across the top of each letter; tagline in Barlow Condensed Bold caps, tracked wide, in lamp amber |
+| Colors | Blaze orange `#FF6A13` · Night navy `#0B1626` · Snow white `#EEF3F8` · Powder blue `#6FB4FF` · Lamp amber `#F6C46A` |
+
+## Idaho coverage (hand-checked feeds)
 
 | Resort | Snow report | Webcams |
 | --- | --- | --- |
 | Tamarack | Resort snow report page | 5 YouTube live cams |
 | Brundage | Brundage app-data JSON | 6 stills, 4 live streams |
 | Bogus Basin | Conditions page | 9 (PrismCam, YouTube, parking cams) |
+| Sun Valley | Mountain report page | 7 stills (Prism, HDRelay) |
 | Schweitzer | MTNPowder feed | Roundshot panorama, 6 YouTube cams |
 | Silver Mountain | Snow report page | 4 stills |
 | Lookout Pass | PowderWatch JSON | 3 live cams |
-| Lost Trail | Snow report page | Chair 1 cam, which streams only while the area is open |
+| Lost Trail | Snow report page | Chair 1 cam, which streams only while open |
+| Grand Targhee | Mountain report page | 6 (stills and YouTube) |
+| Pomerelle | Conditions page | None published |
+| Soldier Mountain | SnoCountry feed | 1 (the site blocks automated reads) |
+| Magic Mountain, Kelly Canyon | OnTheSnow feed | Kelly: 3 YouTube cams |
+| Pebble Creek | Resort JSON | 1 YouTube cam |
 | Little Ski Hill | Status and announcements only | None published |
 
-## Publishing a fresh snapshot
+Every other US and Canadian area gets forecasts, odds, the track record (where there's a SNOTEL gauge), avalanche danger and the official forecast.
 
-1. Start the server: `python3 serve.py`
-2. Open http://127.0.0.1:8765, then run `await Powderline.saveSnapshot()` in the browser console. This writes `snapshot.json`.
-3. Run `python3 build.py`. This writes `dist/powderline.html` with the snapshot embedded, ready to publish.
+## Publishing a fresh snapshot (for the Claude artifact)
 
-## Adding a resort
+1. `python3 serve.py`
+2. Open http://127.0.0.1:8765 and run `await NFOPD.saveSnapshot()` in the browser console. This writes `snapshot.json`.
+3. `python3 build.py` writes `index.html` (the web app) and `dist/nfopd.html` (the artifact, snapshot embedded).
 
-1. Add a row to `RESORTS`: id, name, state, region, latitude, longitude, base ft, summit ft, website.
-2. Optionally add an entry to `REPORTS` that returns `{ new24, new48, new7d, overnight, base, summit, season, liftsOpen, liftsTotal, runsOpen, runsTotal, status, conditions, updated, comment }`.
-3. Optionally add webcams to `CAMS` as `{ name, image, page }`. Add `bust: true` when the image server caches too long.
+## Adding a resort feed
+
+Every area is already in the catalog. To add a resort's own report or cams, add an entry to `REPORTS` that returns `{ new24, new48, new7d, overnight, base, summit, season, liftsOpen, liftsTotal, runsOpen, runsTotal, status, conditions, updated, comment }`, and webcams to `CAMS` as `{ name, image, page }` (add `bust: true` when the image server caches too long). Then add the resort's hosts to `ALLOW` in `api/proxy.js`.

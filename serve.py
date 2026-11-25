@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Powderline local server.
+"""NFOPD (No Friends On Powder Days) local server.
 
-Serves powderline.html at http://127.0.0.1:8765 and proxies the data sources the
+Serves nfopd.html at http://127.0.0.1:8765 and proxies the data sources the
 page reads (NOAA/NWS, Open-Meteo, SNOTEL, avalanche.org, resort websites and
 webcams), so the app works in any browser with no install. Standard library only.
 
@@ -17,8 +17,8 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PAGE = HERE / "powderline.html"
-UA = "Powderline/1.0 (personal snow forecast app)"
+PAGE = HERE / "nfopd.html"
+UA = "NFOPD/1.0 (No Friends On Powder Days snow app; github.com/jmcdannel/nfopd)"
 SKELETON = (
     '<!doctype html><html lang="en"><head><meta charset="utf-8">'
     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -81,7 +81,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         # The page posts a data snapshot here; build.py embeds it into the published copy.
         if urllib.parse.urlsplit(self.path).path != "/snapshot":
             return self.send(404, b"Not found")
-        if self.headers.get("X-Powderline") != "1":  # blocks cross-site form posts
+        if self.headers.get("X-NFOPD") != "1":  # blocks cross-site form posts
             return self.send(403, b"Forbidden")
         n = int(self.headers.get("Content-Length") or 0)
         if n <= 0 or n > 15_000_000:
@@ -95,7 +95,7 @@ def main():
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args()
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    print(f"Powderline running at http://127.0.0.1:{args.port}  (Ctrl+C to stop)")
+    print(f"NFOPD running at http://127.0.0.1:{args.port}  (Ctrl+C to stop)")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
