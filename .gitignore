@@ -1,0 +1,5 @@
+snapshot.json
+dist/
+.impeccable/
+.vercel/
+.DS_Store
