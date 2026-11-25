@@ -132,7 +132,7 @@ async function buildDaily(region, apiKey) {
       used = model; break;
     } catch (e) {
       // Keep a short, non-secret reason (status and error type) so failures can be diagnosed from the response.
-      lastErr = `${model.split('/')[1]}: ${e.status || ''} ${e.error?.error?.type || e.error?.type || e.name || ''}`.trim();
+      lastErr = [lastErr, `${model.split('/')[1]}: ${e.status || ''} ${e.error?.error?.type || e.error?.type || e.name || ''} ${String(e.error?.error?.message || '').slice(0, 140)}`.trim()].filter(Boolean).join(' | ');
       console.error('daily model failed', model, e.status || '', String(e.message).slice(0, 300));
     }
   }
