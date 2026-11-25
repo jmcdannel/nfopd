@@ -123,8 +123,9 @@ async function buildDaily(region, apiKey) {
   for (const model of MODELS) {
     try {
       const msg = await ai.messages.create({
-        model, max_tokens: 6000, system: SYSTEM,
-        output_config: { effort: 'low' },
+        model, max_tokens: 8000, system: SYSTEM,
+        // A summary task: skip the long reasoning pass, which otherwise used the whole token budget.
+        thinking: { type: 'disabled' },
         messages: [{ role: 'user', content: user }],
       });
       if (msg.stop_reason === 'refusal') throw new Error('refused');
