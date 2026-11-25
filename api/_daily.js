@@ -24,6 +24,19 @@ const REGIONS = {
   'Alaska': { afd: ['AFC'], spots: [['Alyeska', 60.970, -149.098, 2750], ['Hilltop', 61.135, -149.769, 2000]] },
   'British Columbia': { afd: [], spots: [['Whistler', 50.108, -122.948, 7160], ['Revelstoke', 51.001, -118.163, 7300], ['Fernie', 49.462, -115.089, 6316], ['Big White', 49.722, -118.929, 7606]] },
   'Alberta': { afd: [], spots: [['Lake Louise', 51.441, -116.162, 8650], ['Sunshine Village', 51.078, -115.782, 8954], ['Marmot Basin', 52.800, -118.083, 8570]] },
+  'Northeast': { afd: ['BTV', 'GYX', 'ALY'], spots: [['Jay Peak', 44.938, -72.505, 3968], ['Stowe', 44.530, -72.781, 3625], ['Killington', 43.605, -72.820, 4241], ['Sugarloaf', 45.031, -70.313, 4237], ['Whiteface', 44.366, -73.903, 4386], ['Loon', 44.036, -71.621, 3050]] },
+  'Midwest': { afd: ['MQT', 'DLH', 'GRB'], spots: [['Mount Bohemia', 47.391, -88.013, 1500], ['Lutsen', 47.664, -90.714, 1688], ['Boyne Mountain', 45.164, -84.930, 1120], ['Granite Peak', 44.932, -89.682, 1942]] },
+  'Southeast': { afd: ['RLX', 'RNK', 'GSP'], spots: [['Snowshoe', 38.411, -79.994, 4848], ['Beech Mountain', 36.196, -81.878, 5506], ['Wintergreen', 37.914, -78.944, 3515]] },
+  'Quebec': { afd: [], spots: [['Mont Tremblant', 46.210, -74.585, 2871], ['Le Massif', 47.283, -70.570, 2645], ['Mont-Sainte-Anne', 47.075, -70.907, 2625], ['Mont Sutton', 45.105, -72.561, 3176]] },
+  'Ontario': { afd: [], spots: [['Blue Mountain', 44.501, -80.316, 1483], ['Mount St. Louis Moonstone', 44.622, -79.669, 1345], ['Searchmont', 46.775, -84.049, 1600]] },
+  'France': { afd: [], spots: [['Chamonix Grands Montets', 45.957, 6.953, 10768], ["Val d'Isère", 45.448, 6.980, 11340], ['Val Thorens', 45.297, 6.580, 10597], ["Alpe d'Huez", 45.092, 6.068, 10925], ['La Clusaz', 45.904, 6.423, 8530]] },
+  'Switzerland': { afd: [], spots: [['Zermatt', 45.960, 7.723, 12740], ['Verbier', 46.096, 7.228, 10925], ['St. Moritz Corvatsch', 46.418, 9.821, 10837], ['Engelberg Titlis', 46.772, 8.438, 9934], ['Laax', 46.845, 9.213, 9902], ['Andermatt', 46.635, 8.594, 9722]] },
+  'Austria': { afd: [], spots: [['St. Anton', 47.129, 10.268, 9222], ['Ischgl', 46.970, 10.293, 9422], ['Sölden', 46.965, 11.007, 10660], ['Kitzbühel', 47.447, 12.392, 6562], ['Saalbach', 47.391, 12.636, 6877], ['Obertauern', 47.249, 13.559, 7589]] },
+  'Italy': { afd: [], spots: [['Cervinia', 45.936, 7.631, 11417], ['Courmayeur', 45.791, 6.969, 9045], ['Livigno', 46.538, 10.136, 9180], ['Val Gardena', 46.558, 11.676, 8264], ['Cortina', 46.540, 12.136, 9613], ['Madonna di Campiglio', 46.229, 10.826, 8202]] },
+  'Scandinavia': { afd: [], spots: [['Åre', 63.399, 13.082, 4180], ['Hemsedal', 60.863, 8.552, 4905], ['Trysil', 61.315, 12.264, 3700], ['Riksgränsen', 68.427, 18.127, 2982]] },
+  'Japan': { afd: [], spots: [['Niseko', 42.868, 140.673, 3937], ['Rusutsu', 42.748, 140.898, 3261], ['Furano', 43.328, 142.353, 3524], ['Hakuba Happo-one', 36.697, 137.837, 6007], ['Myoko Akakura', 36.892, 138.176, 4921], ['Nozawa Onsen', 36.923, 138.441, 5413]] },
+  'New Zealand': { afd: [], spots: [['Mt Hutt', -43.471, 171.527, 6844], ['Treble Cone', -44.633, 168.897, 6851], ['The Remarkables', -45.054, 168.815, 6375], ['Whakapapa', -39.237, 175.556, 7546]] },
+  'South America': { afd: [], spots: [['Portillo', -32.835, -70.129, 10860], ['Valle Nevado', -33.354, -70.249, 12041], ['Las Leñas', -35.149, -70.083, 11253], ['Cerro Catedral', -41.170, -71.439, 7152]] },
 };
 
 async function getJson(url) {
@@ -51,7 +64,7 @@ async function getAfd(office) {
 // Daily model snowfall (raw, Open-Meteo's liquid × 7 conversion, so treat it as rough) and liquid at each summit for the next 7 days.
 async function getModels(spots) {
   const ft2m = ft => Math.round(ft * 0.3048);
-  const models = ['ncep_nbm_conus', 'gfs_seamless', 'ecmwf_ifs025'];
+  const models = ['ncep_nbm_conus', 'gfs_seamless', 'ecmwf_ifs025', 'icon_seamless'];
   const url = 'https://api.open-meteo.com/v1/forecast?' + new URLSearchParams({
     latitude: spots.map(s => s[1]).join(','), longitude: spots.map(s => s[2]).join(','), elevation: spots.map(s => ft2m(s[3])).join(','),
     daily: 'snowfall_sum,precipitation_sum,temperature_2m_max,temperature_2m_min', models: models.join(','),
@@ -65,7 +78,7 @@ async function getModels(spots) {
       const per = models.map(m => {
         const s = d['snowfall_sum_' + m]?.[j], p = d['precipitation_sum_' + m]?.[j];
         if (s == null && p == null) return null;
-        return `${{ ncep_nbm_conus: 'NBM', gfs_seamless: 'GFS', ecmwf_ifs025: 'ECMWF' }[m]} ${s == null ? '–' : s.toFixed(1) + '"'} snow/${p == null ? '–' : p.toFixed(2) + '"'} liquid`;
+        return `${{ ncep_nbm_conus: 'NBM', gfs_seamless: 'GFS', ecmwf_ifs025: 'ECMWF', icon_seamless: 'ICON' }[m]} ${s == null ? '–' : s.toFixed(1) + '"'} snow/${p == null ? '–' : p.toFixed(2) + '"'} liquid`;
       }).filter(Boolean).join(', ');
       const tx = d['temperature_2m_max_ecmwf_ifs025']?.[j] ?? d['temperature_2m_max_gfs_seamless']?.[j];
       const tn = d['temperature_2m_min_ecmwf_ifs025']?.[j] ?? d['temperature_2m_min_gfs_seamless']?.[j];
@@ -77,7 +90,7 @@ async function getModels(spots) {
 
 const SYSTEM = `You write "NFOPD Daily", a short snow discussion for skiers in one region, in the voice of a seasoned mountain forecaster talking to a ski crew at 5 a.m.
 Write about the mountains and ski areas only; skip valleys, plains, cities, coasts and surf unless they explain the mountain weather.
-Use ONLY the NWS forecaster discussions and model numbers you are given. Do not invent storms, totals, or resort conditions that the data does not support. When the NWS and the models disagree, say so. Give snowfall as ranges in inches, and favour the NWS forecasters' reasoning over raw model output. Mention snow levels, wind, and timing when the sources do. No hype, no emojis.
+Use ONLY the forecaster discussions and model numbers you are given. Do not invent storms, totals, or resort conditions that the data does not support. When the NWS and the models disagree, say so. Give snowfall as ranges in inches, and favour the NWS forecasters' reasoning over raw model output. Mention snow levels, wind, and timing when the sources do. No hype, no emojis.
 Return only a JSON object with these keys:
 "headline": one line, at most 90 characters, the main story for skiers.
 "next24": 1–3 sentences on the next 24 hours.
@@ -115,8 +128,8 @@ async function buildDaily(region, apiKey) {
   const user = [
     `Region: ${region}. Current time (UTC): ${now}.`,
     afds.length ? afds.map(a => `=== NWS ${a.office} Area Forecast Discussion, issued ${a.issued} ===\n${a.text}`).join('\n\n')
-      : 'No NWS forecaster discussion covers this region (Canada). Rely on the model numbers and say the discussion is model-based.',
-    models ? `=== Model snowfall and liquid at representative summits (NBM = NOAA National Blend; GFS = NOAA; ECMWF = European) ===\n${models}` : '',
+      : 'No forecaster discussion is available for this region. Rely on the model numbers and say plainly that this discussion is model-based. If it is the off-season there (little or no snow in the data), say so briefly.',
+    models ? `=== Model snowfall and liquid at representative summits (NBM = NOAA National Blend, US only; GFS = NOAA; ECMWF = European; ICON = German) ===\n${models}` : '',
   ].filter(Boolean).join('\n\n');
 
   const ai = client(apiKey);
@@ -146,7 +159,7 @@ async function buildDaily(region, apiKey) {
     ...out,
     sources: [
       ...afds.map(a => ({ name: `NWS ${a.office} Area Forecast Discussion`, issued: a.issued, url: a.url })),
-      ...(models ? [{ name: 'NOAA NBM and GFS, ECMWF IFS via Open-Meteo', url: 'https://open-meteo.com/' }] : []),
+      ...(models ? [{ name: 'NOAA GFS, ECMWF IFS and other models via Open-Meteo', url: 'https://open-meteo.com/' }] : []),
     ],
   };
 }

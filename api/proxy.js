@@ -19,12 +19,14 @@ const ALLOW = [
   'kickinghorseresort.com', 'skifernie.com', 'skikimberley.com', 'skinakiska.com', 'skiwhitewater.com', 'whitewatermountainresort.com', 'skisilverstar.com',
   'skibanff.com', 'skimarmot.com', 'banffnorquay.com', 'mtbaker.us', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
   // independent forecasters' feeds (NFOPD shows short excerpts and links back)
-  'blogspot.com', 'snowalarm.com', 'weatherwest.com', 'powderchasers.com', 'youtube.com', 'mountainweather.com',
+  'rainviewer.com', 'blogspot.com', 'snowalarm.com', 'weatherwest.com', 'powderchasers.com', 'youtube.com', 'mountainweather.com',
 ];
 // How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
 const TTL = [
   [/wcc\.sc\.egov\.usda\.gov\/.*\/stations\?/, 86400], // SNOTEL station list
+  [/archive-api\.open-meteo\.com/, 21600],                 // season history changes once a day
   [/previous-runs-api|ensemble-api/, 3600],                 // model archives and ensembles update a few times a day
+  [/api\.open-meteo\.com\/v1\/forecast\?latitude=(?:[-\d.]+(?:,|%2C)){2,}/, 10800], // whole-region batches are heavy; models refresh every few hours
   [/open-meteo\.com/, 1800],
   [/api\.weather\.gov\/points/, 86400],
   [/api\.weather\.gov\/alerts/, 300],
