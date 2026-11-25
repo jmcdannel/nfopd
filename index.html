@@ -373,10 +373,13 @@ const CURATED = [
 const RESORTS = (() => {
   const out = [...CURATED], ids = new Set(out.map(r => r.id));
   let cat = []; try { cat = JSON.parse(document.getElementById('catalog').textContent); } catch { cat = []; }
+  const words = x => new Set(x.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !['ski', 'area', 'resort', 'mountain', 'the', 'and', 'park', 'recreation', 'alpine', 'valley'].includes(w)));
+  const sameName = (a, b) => { const A = words(a); return [...words(b)].some(w => A.has(w)); };
   const slug = x => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   for (const [name, cc, st, lat, lon, base, summit, web] of cat) {
     const region = cc === 'CA' ? PROV_REGION[st] : STATE_REGION[st];
-    if (!region || CURATED.some(r => km(r.lat, r.lon, lat, lon) < 5)) continue;
+    // Same place as a hand-checked resort only when it's close AND shares a name word (Solitude sits 3 km from Brighton).
+    if (!region || CURATED.some(r => { const d = km(r.lat, r.lon, lat, lon); return d < 1 || (d < 6 && sameName(r.name, name)); })) continue;
     let id = slug(name) || 'ski-area'; if (ids.has(id)) id += '-' + st.toLowerCase(); if (ids.has(id)) continue; ids.add(id);
     out.push({ id, name, state: st, region, lat, lon, base, summit, site: /^https?:\/\//.test(web) ? web.replace(/^http:/, 'https:') : '', country: cc });
   }
@@ -440,11 +443,11 @@ function onTheSnow(id, page) {
   return {
     page, url: `https://api.onthesnow.com/api/v2/resort/${id}/snowreport`,
     parse(text) {
-      const j = JSON.parse(text), cm = v => v == null || v === '' ? null : round(v / 2.54, 0), sn = j.snow || {};
+      const j = JSON.parse(text), cm = v => v == null || v === '' || v / 2.54 > 400 ? null : round(v / 2.54, 0), sn = j.snow || {};
       const status = j.status?.openFlag === 1 ? 'Open' : j.status?.openingDate ? `Closed · opening ${dayLabel(j.status.openingDate.slice(0, 10)).md}` : 'Closed';
       return { new24: cm(sn.last24), new48: cm(sn.last48), new7d: Array.isArray(j.recent) ? cm(sum(j.recent.slice(-7).map(x => x.snow || 0))) : null, base: cm(sn.base), summit: cm(sn.summit),
         liftsOpen: j.lifts?.open ?? null, liftsTotal: j.lifts?.total ?? null, runsOpen: j.runs?.open ?? null, runsTotal: j.runs?.total ?? null, status,
-        updated: j.updatedAt ? j.updatedAt.slice(0, 16).replace('T', ' ') : null, comment: j.comment || null, via: 'OnTheSnow (resort-submitted)' };
+        updated: j.updatedAt ? fmtTime(j.updatedAt) : null, comment: j.comment || null, via: 'OnTheSnow (resort-submitted)' };
     },
   };
 }
@@ -668,6 +671,8 @@ const CAMS = {
     videos: [['Dreamcatcher', 'fQiA_DZT0cE'], ['Summit', 'a5jEZeNTAsE'], ['Stick of Truth', 'B4KTi91qL-4'], ['Habitat / Colter', 'qi6QKB-sJRI']].map(([n, id]) => ({ name: n + ' live', url: ytw(id), kind: 'YouTube live' })) },
   'little-ski-hill': { cams: [], note: 'Little Ski Hill does not publish a webcam or snow numbers. Brundage, 6 miles north, is the closest reading.' },
 };
+// OnTheSnow and SnoCountry ids for western US and Canadian resorts without a reader of their own: [onthesnowId, snocountryId], 0 = none.
+const AGG = {"49-north-mountain-resort":[1,509001],"alpental":[804,425715],"badger-mountain-ski-area":[0,509010],"bluewood":[63,509003],"crystal":[124,206002],"loup-loup-ski-bowl":[0,509007],"mission-ridge-wa":[238,509002],"mt-baker":[266,206003],"mt-spokane":[286,509005],"stevens-pass":[427,206004],"summit-west":[466,425713],"white-pass-ski-area":[494,509004],"anthony-lakes-mountain-resort":[16,503001],"hoodoo-ski-area":[180,503003],"mount-ashland":[264,503008],"mt-bachelor":[265,503004],"mt-hood-meadows-ski-resort":[274,503006],"mt-hood-skibowl":[275,503007],"timberline-lodge-ski-area":[470,503009],"willamette-pass":[502,503010],"bogus-basin":[65,208001],"brundage":[87,208002],"kelly-canyon-ski-resort":[195,208015],"lookout-pass":[215,208004],"magic-mountain":[226,208005],"pebble-creek":[316,208006],"pomerelle":[323,208007],"schweitzer":[350,208008],"silver-mountain":[363,208009],"soldier-mountain":[0,208013],"sun-valley":[440,208012],"tamarack":[1554,208021],"big-sky":[48,406002],"blacktail-mountain-ski-area":[56,406015],"bridger-bowl":[81,406003],"discovery-ski-area":[133,406004],"great-divide-ski-area":[160,406005],"lost-trail":[217,406014],"montana-snowbowl":[247,406008],"red-lodge-mountain":[335,406009],"showdown":[359,406011],"teton-pass-ski-resort":[460,0],"whitefish":[46,406001],"grand-targhee":[157,307002],"hogadon-basin-ski-area":[176,307003],"jackson-hole":[191,307008],"meadowlark-ski-area":[3545,307013],"sleeping-giant-winter-sports-area":[2902,307010],"snow-king-mountain":[12,307006],"snowy-range":[410,307011],"white-pine-resort":[495,307016],"alta":[10,801001],"beaver-mountain":[37,801002],"brian-head-resort":[80,801013],"brighton":[82,801003],"cherry-peak-ski-area":[0,801017],"deer-valley-resort":[129,801004],"eagle-point":[2907,801014],"nordic-valley-resort-wolf-mountain":[296,801016],"park-city-mountain-resort":[314,801006],"powder-mountain-ski-resort":[325,801008],"snowbasin-resort":[403,801009],"snowbird":[404,801010],"solitude-mountain-resort":[413,801011],"sundance-resort":[442,801012],"arapahoe-basin":[20,303001],"aspen-highlands":[0,303004],"aspen-mountain":[25,303003],"beaver-creek-resort-arrowhead-mountain":[36,303005],"breckenridge-ski-resort":[77,303007],"buttermilk":[0,303027],"ski-cooper":[372,719003],"copper-mountain":[113,303009],"crested-butte-mountain-resort":[120,303010],"echo-mountain":[1673,720001],"eldora":[143,303011],"granby-ranch":[365,303018],"howelson-hill-ski-area":[181,303013],"keystone":[197,303014],"loveland-basin-ski-area":[220,303015],"monarch-mountain":[240,719002],"powderhorn":[329,303016],"purgatory-resort":[330,303017],"aspen-snowmass":[0,303020],"steamboat":[425,303021],"sunlight-mountain-resort":[445,303019],"telluride-ski-area":[456,303022],"vail":[482,303023],"winter-park-resort":[507,303024],"wolf-creek":[511,303025],"angel-fire-resort":[14,505001],"pajarito-mountain":[309,505002],"red-river-ski-area":[337,505003],"sandia-peak-ski-area":[345,505004],"sipapu-ski-and-summer-resort":[366,505006],"ski-apache":[367,505007],"ski-santa-fe-santa-fe-q38555":[346,505005],"taos":[454,505009],"arizona-snowbowl":[21,602001],"sunrise-park-resort":[446,602003],"bear-mountain":[43,909002],"bear-valley":[34,209002],"boreal-mountain-resort":[67,916002],"dodge-ridge-ski-area":[134,209003],"donner-ski-ranch":[135,916003],"heavenly-mountain-resort":[169,916004],"homewood-ski-area":[179,916009],"june-mountain":[194,619001],"kirkwood-mountain-resort":[201,209004],"mammoth":[227,619002],"mountain-high":[261,619006],"mt-baldy":[267,909004],"mt-shasta-ski-park":[285,916006],"northstar-at-tahoe-resort":[299,916007],"palisades":[419,916011],"sierra-at-tahoe-ski-resort":[362,916008],"china-peak-mountain-resort":[361,209005],"snow-summit":[400,909001],"snow-valley-mountain-resort":[402,909005],"soda-springs":[411,916010],"sugar-bowl-resort":[432,916012],"tahoe-donner-downhill-ski-area":[451,916013],"badger-pass-ski-area":[29,209001],"diamond-peak":[132,702001],"snobowl-bike-and-ski-area":[2906,0],"lee-canyon":[209,702002],"mount-rose-ski-tahoe":[283,702003],"alyeska-resort":[11,907002],"eaglecrest-ski-area":[141,907003],"hilltop-ski-area":[2908,0],"apex-mountain-resort":[17,604001],"mt-baldy-family-ski-area":[1092,604019],"big-white-ski-resort":[50,604004],"cypress-mountain":[127,604008],"fairmont-hot-springs":[0,604009],"fernie-alpine-resort":[146,604010],"grouse-mountain":[163,604012],"hudson-bay-mountain":[1341,604034],"kicking-horse-resort":[1093,250002],"kimberley-alpine-resort":[199,604015],"manning-park-resort":[3679,604017],"mount-timothy":[3778,0],"mt-seymour":[284,604031],"mount-washington-alpine-resort":[288,604023],"panorama-mountain-resort":[312,604025],"powder-king-mountain-resort":[3777,604027],"red-mountain-resort":[336,604029],"revelstoke-mountain-resort":[2804,604021],"sasquatch-mountain-resort":[3629,604014],"sun-peaks-resort":[438,604042],"whistler-blackcomb":[493,604038],"whitewater-ski-resort":[499,604040],"banff-sunshine-village":[448,403022],"canyon-ski-resort-ski-red-deer":[0,403003],"castle-mountain-resort":[1346,403020],"lake-louise-ski-area":[368,403008],"marmot-basin":[229,403009],"mt-norquay":[802,403001],"nakiska":[292,403011],"winsport-canada-olympic-park":[1343,403002],"silver-star-mountain-resort":[364,604033]};
 
 // ---------------------------------------------------------------- helpers
 const $ = (s, r = document) => r.querySelector(s);
@@ -1203,8 +1208,22 @@ async function getVerify(r) {
 }
 
 // ---------------------------------------------------------------- resort reports
+// The resort's own reader when there is one; otherwise its resort-submitted report via OnTheSnow, or SnoCountry when that's fresher.
+function reportFor(r) { return REPORTS[r.id] || aggReader(r.id); }
+function aggReader(id) {
+  const x = AGG[id]; if (!x) return null;
+  const [ots, sc] = x;
+  return { page: ots ? 'https://www.onthesnow.com/' : 'https://snocountry.com/', agg: true, async load() {
+    let a = null, b = null;
+    if (ots) { try { const t = await Net.text(`https://api.onthesnow.com/api/v2/resort/${ots}/snowreport`); a = { t: Date.parse(JSON.parse(t).updatedAt) || 0, v: onTheSnow(ots).parse(t) }; } catch { /* try SnoCountry */ } }
+    if (sc && (!a || Date.now() - a.t > 72 * H)) { try { const t = await Net.text(`https://snocountry.com/.netlify/functions/snowreport-resort?resortId=${sc}`); b = { t: Date.parse((JSON.parse(t).reportDateTime || '').replace(' ', 'T')) || 0, v: snoCountry(sc).parse(t) }; } catch { /* none */ } }
+    const pick = [a, b].filter(Boolean).sort((p, q) => q.t - p.t)[0];
+    if (!pick) throw new Error('No resort-submitted report is available right now');
+    return pick.v;
+  } };
+}
 async function getReport(r) {
-  const a = REPORTS[r.id];
+  const a = reportFor(r);
   if (!a) return null;
   return memo('report:' + r.id, 20 * MIN, async () => {
     const out = { source: a.page || a.url };
@@ -1648,7 +1667,7 @@ async function tabSummary(el, r) {
   all(['rep', 'snotel', 'hourly']).then(({ rep, snotel, hourly }) => {
     const rp = rep.value, sn = snotel.value, hm = hourly.value;
     fill('s-xcheck', `<div class="table-scroll"><table><thead><tr><th>Source</th><th>New snow</th><th>Depth</th><th style="text-align:left">Details</th></tr></thead><tbody>
-      <tr><td>Resort report</td><td>${rp?.new24 != null ? fmtIn(rp.new24) + '"' : '–'}</td><td>${rp?.base != null ? (typeof rp.base === 'string' ? esc(rp.base) : fmtIn(rp.base) + '"') : '–'}</td><td style="text-align:left" class="mute">${rp ? `${rp.updated ? 'Updated ' + esc(rp.updated) + ' · ' : ''}<a href="${esc(httpsUrl(REPORTS[r.id]?.page) || r.site)}" target="_blank" rel="noopener">source</a>` : REPORTS[r.id] ? errText(rep.reason) : 'This resort publishes no snow report we can read'}</td></tr>
+      <tr><td>Resort report</td><td>${rp?.new24 != null ? fmtIn(rp.new24) + '"' : '–'}</td><td>${rp?.base != null ? (typeof rp.base === 'string' ? esc(rp.base) : fmtIn(rp.base) + '"') : '–'}</td><td style="text-align:left" class="mute">${rp ? `${rp.updated ? 'Updated ' + esc(rp.updated) + ' · ' : ''}<a href="${esc(httpsUrl(reportFor(r)?.page) || r.site)}" target="_blank" rel="noopener">source</a>` : reportFor(r) ? errText(rep.reason) : 'No snow report is available for this resort'}</td></tr>
       <tr><td>SNOTEL, observed</td><td>${sn ? fmtIn(sn.new24) + '"' : '–'}</td><td>${sn?.depth != null ? fmtIn(sn.depth) + '"' : '–'}</td><td style="text-align:left" class="mute">${sn ? `${esc(sn.station.name)}, ${fmtFt(sn.station.elev)} ft, ${sn.station.km} km away · water +${fmtIn(sn.swe24)}"` : errText(snotel.reason) || 'No station within 45 km'}</td></tr>
       <tr><td>Model, HRRR/GFS</td><td>${hm ? fmtIn(hm.summit.p24) + '"' : '–'}</td><td>${hm?.summit?.depth != null ? fmtIn(hm.summit.depth) + '"' : '–'}</td><td style="text-align:left" class="mute">${hm ? `Upper mountain · base ${fmtIn(hm.base.p24)}" · last 72h ${fmtIn(hm.summit.p72)}"` : errText(hourly.reason)}</td></tr>
       </tbody></table></div>`);
@@ -1794,8 +1813,8 @@ async function tabEccc(el, r) {
   fill('n-detail', `<div class="detailed">${e.periods.map(p => `<div><b>${esc(p.name)}</b><span>${esc(p.detail)}</span></div>`).join('')}</div>`);
 }
 async function tabReport(el, r) {
-  const a = REPORTS[r.id];
-  el.innerHTML = `${slot('r-report', 'From the resort', a ? `From <a href="${esc(httpsUrl(a.page) || r.site)}" target="_blank" rel="noopener">${esc(host(a.page || r.site))} ${ICON.out}</a>` : '')}
+  const a = reportFor(r);
+  el.innerHTML = `${slot('r-report', a?.agg ? 'Resort-submitted report' : 'From the resort', a ? `From <a href="${esc(httpsUrl(a.page) || r.site)}" target="_blank" rel="noopener">${esc(host(a.page || r.site))} ${ICON.out}</a>` : '')}
     ${slot('r-snotel', 'Nearest SNOTEL station', 'USDA NRCS, observed')}`;
   if (!a) fill('r-report', `<p class="empty">No snow report feed is connected for ${esc(r.name)} yet.${r.site ? ` <a href="${esc(r.site)}" target="_blank" rel="noopener">Open the resort's website</a>.` : ''}</p>`);
   const [rep, sn] = await Promise.allSettled([getReport(r), getSnotel(r)]);
