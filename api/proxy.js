@@ -10,7 +10,8 @@ const ALLOW = [
   'onthesnow.com', 'pebblecreekskiarea.com', 'grandtarghee.com', 'soldiermountain.com',
   // webcam image hosts
   'ytimg.com', 'storage.googleapis.com', 'hdrelay.com', 'roundshot.com', 'ipcamlive.com', 'yellowstone.ai',
-  'd1xrbm8v2c14yb.cloudfront.net', 'seejh.com', 'brownrice.com', 'snow.com', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
+  'd1xrbm8v2c14yb.cloudfront.net', 'seejh.com', 'brownrice.com', 'snow.com', 'ozolio.com', 'hdrelay.io', 'b-cdn.net', 'redresort.com', 'panoramaresort.com', 'sunpeaksresort.com',
+  'coppercolorado.com', 'eldora.com', 'brightonresort.com', 'snowbasin.com', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
 ];
 // How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
 const TTL = [
