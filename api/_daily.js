@@ -1,11 +1,15 @@
 // NFOPD Daily: an AI-written regional snow discussion built only from public data —
 // the latest NWS Area Forecast Discussions for the region's offices plus model snowfall
-// at a few representative summits. Runs on Vercel AI Gateway's free monthly credit.
-// Shared by api/daily.js (Vercel) and scripts/daily-local.js (serve.py).
+// at a few representative summits. Runs through Vercel AI Gateway on its zero-cost models,
+// so it spends nothing. Used by api/daily.js.
 const Anthropic = require('@anthropic-ai/sdk');
 
 const UA = 'NFOPD/1.0 (No Friends On Powder Days snow app; https://github.com/jmcdannel/nfopd)';
-const MODEL = 'anthropic/claude-haiku-5.5'; // ~$0.001 per discussion; the free $5/month covers it many times over
+// Tried in order. Both are $0 on AI Gateway (Claude and other paid models need purchased credits).
+// To use a paid model instead, set NFOPD_DAILY_MODEL in the Vercel project, e.g. anthropic/claude-haiku-5.5.
+const MODELS = process.env.NFOPD_DAILY_MODEL ? [process.env.NFOPD_DAILY_MODEL] : ['nvidia/nemotron-3.5-lightning-free', 'reflection/beam-free'];
+const MODEL_NAME = { 'nvidia/nemotron-3.5-lightning-free': 'NVIDIA Nemotron 3.5 Lightning', 'reflection/beam-free': 'Reflection Beam', 'anthropic/claude-haiku-5.5': 'Claude Haiku 5.5' };
+const fail = (message, status) => Object.assign(new Error(message), { status, expose: true });
 
 // Offices whose AFDs cover each region's ski areas, and summits that represent it.
 // [name, lat, lon, summit ft]
@@ -99,13 +103,13 @@ function parseJson(text) {
 
 async function buildDaily(region, apiKey) {
   const cfg = REGIONS[region];
-  if (!cfg) throw Object.assign(new Error('Unknown region'), { status: 400 });
-  if (!apiKey) throw Object.assign(new Error('AI Gateway credentials are not configured'), { status: 503 });
+  if (!cfg) throw fail('Unknown region', 400);
+  if (!apiKey) throw fail('AI Gateway credentials are not configured', 503);
   const [afds, models] = await Promise.all([
     Promise.allSettled(cfg.afd.map(getAfd)).then(rs => rs.map(r => r.value).filter(Boolean)),
     getModels(cfg.spots).catch(() => ''),
   ]);
-  if (!afds.length && !models) throw Object.assign(new Error('No source data available right now'), { status: 502 });
+  if (!afds.length && !models) throw fail('No source data available right now', 502);
   const now = new Date().toISOString();
   const user = [
     `Region: ${region}. Current time (UTC): ${now}.`,
@@ -114,18 +118,24 @@ async function buildDaily(region, apiKey) {
     models ? `=== Model snowfall and liquid at representative summits (NBM = NOAA National Blend; GFS = NOAA; ECMWF = European) ===\n${models}` : '',
   ].filter(Boolean).join('\n\n');
 
-  const msg = await client(apiKey).messages.create({
-    model: MODEL,
-    max_tokens: 2000,
-    system: SYSTEM,
-    output_config: { effort: 'low' },
-    messages: [{ role: 'user', content: user }],
-  });
-  if (msg.stop_reason === 'refusal') throw Object.assign(new Error('The model declined to write this discussion'), { status: 502 });
-  const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
+  const ai = client(apiKey);
+  let out, used, lastErr;
+  for (const model of MODELS) {
+    try {
+      const msg = await ai.messages.create({
+        model, max_tokens: 6000, system: SYSTEM,
+        output_config: { effort: 'low' },
+        messages: [{ role: 'user', content: user }],
+      });
+      if (msg.stop_reason === 'refusal') throw new Error('refused');
+      out = parseJson(msg.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+      used = model; break;
+    } catch (e) { lastErr = e; console.error('daily model failed', model, e.status || '', String(e.message).slice(0, 300)); }
+  }
+  if (!out) throw Object.assign(lastErr || new Error('No model answered'), { status: 502, expose: false });
   return {
-    region, generated: now, model: 'Claude Haiku 5.5',
-    ...parseJson(text),
+    region, generated: now, model: MODEL_NAME[used] || used,
+    ...out,
     sources: [
       ...afds.map(a => ({ name: `NWS ${a.office} Area Forecast Discussion`, issued: a.issued, url: a.url })),
       ...(models ? [{ name: 'NOAA NBM and GFS, ECMWF IFS via Open-Meteo', url: 'https://open-meteo.com/' }] : []),
