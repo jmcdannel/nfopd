@@ -1,0 +1,8 @@
+{
+  "name": "nfopd",
+  "private": true,
+  "description": "NFOPD (No Friends On Powder Days) serverless functions",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0"
+  }
+}
