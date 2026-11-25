@@ -128,11 +128,13 @@ async function buildDaily(region, apiKey) {
         messages: [{ role: 'user', content: user }],
       });
       if (msg.stop_reason === 'refusal') throw new Error('refused');
-      out = parseJson(msg.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+      const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
+      try { out = parseJson(text); }
+      catch (e) { throw new Error(`unparseable reply (stop ${msg.stop_reason}; blocks ${msg.content.map(b => b.type).join(',')}; ${text.length} chars: ${text.slice(0, 80)})`); }
       used = model; break;
     } catch (e) {
       // Keep a short, non-secret reason (status and error type) so failures can be diagnosed from the response.
-      lastErr = [lastErr, `${model.split('/')[1]}: ${e.status || ''} ${e.error?.error?.type || e.error?.type || e.name || ''} ${String(e.error?.error?.message || '').slice(0, 140)}`.trim()].filter(Boolean).join(' | ');
+      lastErr = [lastErr, `${model.split('/')[1]}: ${e.status || ''} ${e.error?.error?.type || e.error?.type || e.name || ''} ${String(e.error?.error?.message || (e.status ? '' : e.message) || '').slice(0, 220)}`.trim()].filter(Boolean).join(' | ');
       console.error('daily model failed', model, e.status || '', String(e.message).slice(0, 300));
     }
   }
