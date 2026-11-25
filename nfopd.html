@@ -285,6 +285,7 @@ footer p { max-width: 90ch; margin: 0 0 6px; }
 <footer>
   <p>Forecasts: NOAA National Weather Service grid forecast, 7-day forecast, discussions, alerts and radar; NOAA NBM, HRRR and GFS plus ECMWF, GEM and ICON via Open-Meteo. Observations: USDA NRCS SNOTEL and NWS stations. Avalanche danger: avalanche.org centers. Snow reports and webcams come from each resort's own website, linked on its page.</p>
   <p>Model snowfall uses a Kuchera temperature-based snow ratio. NWS snowfall is shown as issued.</p>
+  <p><a href="/compare">How NFOPD compares with OpenSnow</a> · <a href="https://github.com/jmcdannel/nfopd" target="_blank" rel="noopener">Source on GitHub</a></p>
 </footer>
 <dialog class="viewer" id="viewer"><div class="vbar"><span id="vcap"></span><button class="btn" type="button" id="vclose">Close</button></div><div id="vbody"></div></dialog>
 
@@ -373,6 +374,39 @@ const OM = { ncep_nbm_conus: 'nbm', ncep_hrrr_conus: 'hrrr', gfs_seamless: 'gfs'
 const strip = h => h == null ? null : String(h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#8243;|&Prime;/g, '″').replace(/&amp;/g, '&').replace(/&#8217;|&rsquo;/g, '’').replace(/\n{3,}/g, '\n\n').trim();
 const yt = id => `https://i.ytimg.com/vi/${id}/maxresdefault_live.jpg`;
 const ytw = id => `https://www.youtube.com/watch?v=${id}`;
+// MTNPowder: the feed behind many Alterra and independent resort report pages. The public token comes
+// from the resort's own feed config each time, so nothing secret lives here.
+function mtnPowder(slug, page) {
+  return {
+    page,
+    async load() {
+      const cfg = await Net.json(`https://v4.mtnfeed.com/resorts/${slug}.json`);
+      const token = cfg.bearerToken, id = (cfg.resortIds || [])[0];
+      if (!token || !id) throw new Error('This resort feed has no token');
+      const j = await Net.json(`https://mtnpowder.com/feed/v3.json?bearer_token=${encodeURIComponent(token)}&resortId[]=${id}`);
+      const R = j.Resorts?.[0] || {}, S = R.SnowReport || {}, n = v => v === '--' || v === '' ? null : P.num(v);
+      return { overnight: n(S.BaseArea?.SinceLiftsClosedIn), new24: n(S.SummitArea?.Last24HoursIn) ?? n(S.BaseArea?.Last24HoursIn) ?? n(S.AllMountain?.Last24HoursIn),
+        new48: n(S.SummitArea?.Last48HoursIn) ?? n(S.BaseArea?.Last48HoursIn), new7d: n(S.SummitArea?.Last7DaysIn) ?? n(S.BaseArea?.Last7DaysIn),
+        base: n(S.BaseArea?.BaseIn), summit: n(S.SummitArea?.BaseIn), season: n(S.SeasonTotalIn),
+        liftsOpen: P.num(S.TotalOpenLifts), liftsTotal: P.num(S.TotalLifts), runsOpen: P.num(S.TotalOpenTrails), runsTotal: P.num(S.TotalTrails),
+        status: R.OperatingStatus || null, conditions: S.BaseConditions && S.BaseConditions !== '--' ? S.BaseConditions : null,
+        updated: S.LastUpdate ? fmtTime(S.LastUpdate.replace(/([+-]\d\d)(\d\d)$/, '$1:$2')) : null, comment: strip(S.Report) };
+    },
+  };
+}
+// SnoCountry resort feed (resort-submitted, inches).
+function snoCountry(id, page) {
+  return {
+    page: page || `https://snocountry.com/`, url: `https://snocountry.com/.netlify/functions/snowreport-resort?resortId=${id}`,
+    parse(text) {
+      const j = JSON.parse(text), n = v => v === '' || v == null ? null : P.num(v);
+      return { new24: n(j.newSnowMin), new48: n(j.snowLast48Hours), base: n(j.avgBaseDepthMin), summit: n(j.avgBaseDepthMax), season: n(j.seasonTotal),
+        liftsOpen: n(j.openDownHillLifts), liftsTotal: n(j.maxOpenDownHillLifts), runsOpen: n(j.openDownHillTrails), runsTotal: n(j.maxOpenDownHillTrails),
+        status: j.operatingStatus || null, conditions: [j.primarySurfaceCondition, j.secondarySurfaceCondition].filter(Boolean).join(' / ') || null,
+        updated: j.reportDateTime || null, comment: j.snowComments || null, via: 'SnoCountry (resort-submitted)' };
+    },
+  };
+}
 // OnTheSnow resort feed (resort-submitted, centimetres) for areas that publish nothing machine-readable themselves.
 function onTheSnow(id, page) {
   return {
@@ -435,22 +469,7 @@ const REPORTS = {
     },
   },
 
-  schweitzer: {
-    page: 'https://www.schweitzer.com/mountain-info/mountain-report',
-    // MTNPowder feed; the public token comes from Schweitzer's own feed config each time.
-    async load() {
-      const cfg = await Net.json('https://v4.mtnfeed.com/resorts/schweitzer.json');
-      const token = cfg.bearerToken, id = (cfg.resortIds || [168])[0];
-      if (!token) throw new Error('Schweitzer feed config has no token');
-      const j = await Net.json(`https://mtnpowder.com/feed/v3.json?bearer_token=${encodeURIComponent(token)}&resortId[]=${id}`);
-      const R = j.Resorts?.[0] || {}, S = R.SnowReport || {}, n = v => v === '--' ? null : P.num(v);
-      return { overnight: n(S.BaseArea?.SinceLiftsClosedIn), new24: n(S.SummitArea?.Last24HoursIn) ?? n(S.BaseArea?.Last24HoursIn), new48: n(S.SummitArea?.Last48HoursIn) ?? n(S.BaseArea?.Last48HoursIn),
-        new7d: n(S.BaseArea?.Last7DaysIn), base: n(S.BaseArea?.BaseIn), summit: n(S.SummitArea?.BaseIn), season: n(S.SeasonTotalIn),
-        liftsOpen: P.num(S.TotalOpenLifts), liftsTotal: P.num(S.TotalLifts), runsOpen: P.num(S.TotalOpenTrails), runsTotal: P.num(S.TotalTrails),
-        status: R.OperatingStatus || null, conditions: S.BaseConditions && S.BaseConditions !== '--' ? S.BaseConditions : null,
-        updated: S.LastUpdate ? fmtTime(S.LastUpdate.replace(/([+-]\d\d)(\d\d)$/, '$1:$2'), 'America/Los_Angeles') : null, comment: strip(S.Report) };
-    },
-  },
+  schweitzer: mtnPowder('schweitzer', 'https://www.schweitzer.com/mountain-info/mountain-report'),
   'silver-mountain': {
     page: 'https://silvermt.com/snow-report/', url: 'https://silvermt.com/snow-report/',
     parse(html) {
@@ -508,15 +527,7 @@ const REPORTS = {
         comment: [P.txt(doc, 'p.mc__alert'), strip(doc.querySelector('.mc-weather .mc__callout .forecast-text')?.innerHTML)].filter(Boolean).join('\n\n') || null };
     },
   },
-  'soldier-mountain': {
-    page: 'https://snocountry.com/snow-report/idaho/soldier-mountain-ski-area/', url: 'https://snocountry.com/.netlify/functions/snowreport-resort?resortId=208010',
-    parse(text) {
-      const j = JSON.parse(text), n = v => v === '' || v == null ? null : P.num(v);
-      return { new24: n(j.newSnowMin), new48: n(j.snowLast48Hours), base: n(j.avgBaseDepthMin), season: n(j.seasonTotal), liftsOpen: n(j.openDownHillLifts), liftsTotal: n(j.maxOpenDownHillLifts),
-        runsOpen: n(j.openDownHillTrails), runsTotal: n(j.maxOpenDownHillTrails), status: j.operatingStatus || null, conditions: [j.primarySurfaceCondition, j.secondarySurfaceCondition].filter(Boolean).join(' / ') || null,
-        updated: j.reportDateTime || null, comment: j.snowComments || null };
-    },
-  },
+  'soldier-mountain': snoCountry(208010, 'https://snocountry.com/snow-report/idaho/soldier-mountain-ski-area/'),
   pomerelle: {
     page: 'https://www.pomerelle.com/conditions', url: 'https://www.pomerelle.com/conditions',
     parse(html) {

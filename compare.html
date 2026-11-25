@@ -1,0 +1,150 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0B1626"><meta name="description" content="Feature-by-feature comparison of NFOPD (No Friends On Powder Days) with OpenSnow Free, Base and Premium."><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22NFOPD%22%3E%20%20%3Ctitle%3ENFOPD%3A%20No%20Friends%20On%20Powder%20Days%3C/title%3E%20%20%3Cdefs%3E%3CclipPath%20id%3D%22tile%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22/%3E%3C/clipPath%3E%3C/defs%3E%20%20%3Cg%20clip-path%3D%22url%28%23tile%29%22%3E%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23FF6A13%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%2217%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2219.5%22%20width%3D%229%22%20height%3D%222.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2227%22%20width%3D%2217%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Cpath%20d%3D%22M0%2037%20C%2010%2032%2C%2019%2039%2C%2031%2034%20S%2052%2029%2C%2064%2034%20V64%20H0%20Z%22%20fill%3D%22%23EEF3F8%22/%3E%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%230B1626%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%3E%20%20%20%20%20%20%3Cpath%20d%3D%22M33%2036%20C%2025%2042%2C%2044%2047%2C%2034%2054%20S%2030%2062%2C%2038%2068%22/%3E%20%20%20%20%20%20%3Cpath%20d%3D%22M39.5%2035%20C%2031.5%2041%2C%2050.5%2046%2C%2040.5%2053%20S%2036.5%2061%2C%2044.5%2067%22/%3E%20%20%20%20%3C/g%3E%20%20%3C/g%3E%3C/svg%3E"><title>NFOPD vs OpenSnow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: NFOPD's pre-dawn world. Verdict summary first, then the feature matrix by category, then the gaps to close. Single dark theme by choice. */
+:root {
+  --night: #0B1626; --night-2: #111F33; --night-3: #18294A; --rule: #24384F;
+  --snow: #EEF3F8; --mute: #9AAEC5; --blaze: #FF6A13; --ink: #10151C; --powder: #6FB4FF; --lamp: #F6C46A;
+  --yes: #5CD38F; --part: #F6C46A; --no: #FF8577;
+  --f-sign: "Barlow Condensed", "Arial Narrow", sans-serif; --f-text: "Barlow", -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--night); color: var(--snow); font: 16px/1.55 var(--f-text); margin: 0; font-variant-numeric: tabular-nums; }
+::selection { background: var(--blaze); color: var(--ink); }
+a { color: var(--powder); text-underline-offset: 3px; }
+.page { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+header { display: grid; gap: 14px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 44px; height: 44px; }
+.word { font: italic 800 34px/0.9 var(--f-sign); letter-spacing: .035em; }
+.word .pd { color: var(--powder); }
+.vs { font: 700 18px/1 var(--f-sign); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+h1 { font: 800 clamp(34px, 6vw, 52px)/1.02 var(--f-sign); margin: 0; text-wrap: balance; max-width: 20ch; }
+.lede { margin: 0; max-width: 64ch; font-size: 18px; color: var(--snow); }
+.meta { margin: 0; color: var(--mute); font-size: 14px; max-width: 75ch; }
+h2 { font: 700 28px/1.1 var(--f-sign); margin: 0; }
+h3 { font: 700 20px/1.15 var(--f-sign); margin: 0; }
+.score { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0; border-top: 1px solid var(--rule); }
+.score > div { padding: 16px 18px 18px 0; border-bottom: 1px solid var(--rule); display: grid; gap: 6px; align-content: start; }
+.score .n { font: 800 44px/1 var(--f-sign); }
+.score .n.lead { color: var(--blaze); }
+.score .k { font: 700 13px/1.2 var(--f-sign); letter-spacing: .1em; text-transform: uppercase; color: var(--lamp); }
+.score p { margin: 0; color: var(--mute); font-size: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--mute); }
+.table-wrap { overflow-x: auto; border-top: 2px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; }
+th, td { text-align: left; vertical-align: top; padding: 11px 10px; border-bottom: 1px solid var(--rule); }
+thead th { font: 700 14px/1.2 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); position: sticky; top: 0; background: var(--night); }
+thead th.nf { color: var(--snow); }
+thead th small { display: block; font: 600 12px var(--f-text); letter-spacing: 0; text-transform: none; color: var(--mute); margin-top: 2px; }
+tr.cat th { font: 700 15px var(--f-sign); letter-spacing: .1em; text-transform: uppercase; color: var(--lamp); padding-top: 22px; border-bottom: 1px solid var(--rule); }
+td:first-child { width: 30%; font-weight: 600; }
+td.nf { background: color-mix(in srgb, var(--blaze) 7%, transparent); }
+td .note { display: block; font-size: 13px; color: var(--mute); margin-top: 3px; line-height: 1.4; }
+.chip { display: inline-block; font: 700 12px/1.6 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; padding: 0 8px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.yes { color: var(--yes); } .chip.part { color: var(--part); } .chip.no { color: var(--no); } .chip.nl { color: var(--mute); border-style: dashed; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; }
+.cols ul { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 10px; }
+.cols li { max-width: 60ch; }
+.cols li b { font-weight: 700; }
+.sources { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--mute); font-size: 14px; display: grid; gap: 6px; }
+.sources p { margin: 0; max-width: 80ch; }
+</style></head><body>
+
+<div class="page">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><clipPath id="t"><rect width="64" height="64" rx="14"/></clipPath></defs><g clip-path="url(#t)"><rect width="64" height="64" fill="#FF6A13"/><rect x="9" y="11" width="17" height="3.6" rx="1" fill="#0B1626"/><rect x="9" y="19.5" width="9" height="2.6" rx="1" fill="#0B1626"/><rect x="9" y="27" width="17" height="3.6" rx="1" fill="#0B1626"/><path d="M0 37 C 10 32, 19 39, 31 34 S 52 29, 64 34 V64 H0 Z" fill="#EEF3F8"/><g fill="none" stroke="#0B1626" stroke-width="3" stroke-linecap="round"><path d="M33 36 C 25 42, 44 47, 34 54 S 30 62, 38 68"/><path d="M39.5 35 C 31.5 41, 50.5 46, 40.5 53 S 36.5 61, 44.5 67"/></g></g></svg>
+      <span class="word">NFO<span class="pd">PD</span></span><span class="vs">vs OpenSnow</span>
+    </div>
+    <h1>What NFOPD matches, beats and still lacks</h1>
+    <p class="lede">NFOPD already covers what OpenSnow sells as Base and Premium forecasting: 10-day detail, days 11–15, multi-model comparison and forecast confidence. It's free, with no login. OpenSnow still leads on human forecasters, maps, push alerts, the "My Location" forecast for any spot, and snow reports and webcams beyond Idaho.</p>
+    <p class="meta">OpenSnow's columns follow its own plan page as read on November 25, 2026. Anything that page doesn't mention is marked "not listed", even if OpenSnow may offer it elsewhere. NFOPD's column reflects the build as tested that day.</p>
+  </header>
+
+  <section class="score" aria-label="Summary">
+    <div><span class="k">Full support in NFOPD</span><span class="n lead">16</span><p>of 27 compared features have full NFOPD support, at no cost.</p></div>
+    <div><span class="k">Only NFOPD has</span><span class="n">9</span><p>including snow odds, a forecast track record, and NOAA's text forecast and discussion.</p></div>
+    <div><span class="k">Gaps to close</span><span class="n">10</span><p>where an OpenSnow plan does more: maps, push alerts, expert write-ups, and reports and cams beyond Idaho.</p></div>
+    <div><span class="k">Price per year</span><span class="n">$0</span><p>OpenSnow: free, $49.99 Base, $99.99 Premium.</p></div>
+  </section>
+
+  <section aria-labelledby="matrix-h" style="display:grid;gap:14px">
+    <h2 id="matrix-h">Feature by feature</h2>
+    <div class="legend"><span><span class="chip yes">Yes</span> included</span><span><span class="chip part">Partly</span> limited, see note</span><span><span class="chip no">No</span> not offered</span><span><span class="chip nl">Not listed</span> not on OpenSnow's plan page</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>OpenSnow Free</th><th>OpenSnow Base<small>$49.99 / year</small></th><th>OpenSnow Premium<small>$99.99 / year</small></th><th class="nf">NFOPD<small>Free, no login</small></th></tr></thead>
+        <tbody>
+          <tr class="cat"><th colspan="5">Snow forecasts</th></tr>
+          <tr><td>15-day snow summary</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">16 days, upper mountain and base.</span></td></tr>
+          <tr><td>10-day detailed forecast</td><td><span class="chip no">No</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Day by day for 7 models plus the blend.</span></td></tr>
+          <tr><td>Days 11–15 forecast</td><td><span class="chip no">No</span></td><td><span class="chip no">No</span></td><td><span class="chip yes">Yes</span><span class="note">AIFS ensemble and GEFS.</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Blend plus GEFS and ECMWF ensembles.</span></td></tr>
+          <tr><td>Multi-model comparison</td><td><span class="chip no">No</span></td><td><span class="chip no">No</span></td><td><span class="chip yes">Yes</span><span class="note">"Forecast Range" graphs.</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">NWS, NBM, HRRR, GFS, ECMWF, GEM, ICON side by side.</span></td></tr>
+          <tr><td>Forecast confidence</td><td><span class="chip no">No</span></td><td><span class="chip no">No</span></td><td><span class="chip part">Partly</span><span class="note">Read from how tight the lines are.</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">0–100 score from 82 ensemble runs, for days 1–5, 6–10 and 11–15.</span></td></tr>
+          <tr><td>Odds of 1", 6" and 12"+</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Per window and per day.</span></td></tr>
+          <tr><td>Hourly forecast</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">NWS hourly for 7 days (GEM model in Canada).</span></td></tr>
+          <tr><td>Snow level against base and summit</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span></td></tr>
+          <tr><td>Snow quality (density)</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">From the snow-to-liquid ratio.</span></td></tr>
+          <tr><td>Proprietary AI forecast model</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span><span class="note">PEAKS isn't named on this page.</span></td><td class="nf"><span class="chip no">No</span><span class="note">A transparent weighted blend instead.</span></td></tr>
+
+          <tr class="cat"><th colspan="5">Official forecasts and accuracy</th></tr>
+          <tr><td>NOAA 7-day text forecast (weather.gov)</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Environment Canada's forecast for Canadian resorts.</span></td></tr>
+          <tr><td>Forecaster discussion</td><td><span class="chip no">No</span></td><td><span class="chip yes">Yes</span><span class="note">Local "Daily Snow" experts.</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">The NWS Area Forecast Discussion with snow terms highlighted. Written for all weather, not for skiers.</span></td></tr>
+          <tr><td>Forecast track record</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">30 days of 1, 3 and 5-day forecasts scored against the nearest SNOTEL gauge.</span></td></tr>
+          <tr><td>Shows forecast changes since yesterday</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Yesterday's total stays visible, struck through.</span></td></tr>
+
+          <tr class="cat"><th colspan="5">Snow reports and observations</th></tr>
+          <tr><td>Resort snow reports</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">Read live from 15 Idaho-area resorts. Other resorts link out.</span></td></tr>
+          <tr><td>Mountain webcams</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">About 50 cams at 11 Idaho-area resorts.</span></td></tr>
+          <tr><td>SNOTEL observations</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">Nearest station: depth, water, 24-hour change.</span></td></tr>
+          <tr><td>Resort vs SNOTEL vs model check</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">The resort's claimed 24 hours beside what was measured.</span></td></tr>
+          <tr><td>Historical weather and snow</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">Past 7 days modeled and 15 days of SNOTEL. No season archive.</span></td></tr>
+
+          <tr class="cat"><th colspan="5">Safety, maps and alerts</th></tr>
+          <tr><td>Avalanche forecasts</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">avalanche.org centers and Avalanche Canada.</span></td></tr>
+          <tr><td>Radar</td><td><span class="chip yes">Yes</span><span class="note">StormNet and super-res radar.</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">Nearest NWS radar loop as an image.</span></td></tr>
+          <tr><td>Weather alerts</td><td><span class="chip nl">Not listed</span></td><td><span class="chip nl">Not listed</span></td><td><span class="chip yes">Yes</span><span class="note">Lightning, hail, tornado and precipitation alerts.</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">Active NWS and Environment Canada warnings shown in the app. No push.</span></td></tr>
+          <tr><td>Snow alerts (push)</td><td><span class="chip yes">Yes</span><span class="note">Snow report alerts.</span></td><td><span class="chip yes">Yes</span><span class="note">Adds snow forecast alerts.</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip no">No</span><span class="note">The desktop app shows the top 24-hour total on its icon.</span></td></tr>
+          <tr><td>3D, offline, satellite and storm maps</td><td><span class="chip part">Partly</span><span class="note">Satellite, terrain, fires and air quality.</span></td><td><span class="chip yes">Yes</span><span class="note">Adds 3D and offline maps.</span></td><td><span class="chip yes">Yes</span><span class="note">Adds a global storm map and recent satellite images.</span></td><td class="nf"><span class="chip no">No</span></td></tr>
+
+          <tr class="cat"><th colspan="5">Coverage and access</th></tr>
+          <tr><td>US and Canada ski areas</td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip yes">Yes</span><span class="note">562 operating downhill areas from OpenSkiMap.</span></td></tr>
+          <tr><td>Forecast for any location</td><td><span class="chip yes">Yes</span><span class="note">My Location 15-day forecast.</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip no">No</span><span class="note">Ski areas only.</span></td></tr>
+          <tr><td>Apps</td><td><span class="chip yes">Yes</span><span class="note">iOS, Android and web.</span></td><td><span class="chip yes">Yes</span></td><td><span class="chip yes">Yes</span></td><td class="nf"><span class="chip part">Partly</span><span class="note">Web app (phone-first), plus a Claude desktop app and a local server. No app-store apps.</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="cols">
+    <div>
+      <h2>Where NFOPD is ahead</h2>
+      <ul>
+        <li><b>It shows its work.</b> Every number names its source (resort, SNOTEL or model), and the model table shows each forecast that goes into the blend.</li>
+        <li><b>Real odds.</b> The chance of 1", 6" and 12"+ comes from 82 ensemble runs, and the confidence score is a number you can compare day to day.</li>
+        <li><b>A track record.</b> NFOPD scores 30 days of past forecasts against what SNOTEL gauges measured, so you know how far to trust them at your mountain.</li>
+        <li><b>NOAA first.</b> The official forecast, hourly grid, snow level and forecaster discussion sit next to the models, with nothing behind a paywall.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Gaps to close next</h2>
+      <ul>
+        <li><b>Push alerts.</b> A morning powder alert when a favorite resort reports or forecasts 6"+.</li>
+        <li><b>Reports and cams outside Idaho.</b> The same resort feeds, starting with the most-visited areas in each region.</li>
+        <li><b>Maps.</b> Snowfall forecast and snow depth maps, plus a full radar map.</li>
+        <li><b>Expert write-ups.</b> The NWS discussion is thorough but isn't written for skiers.</li>
+        <li><b>Any-location forecasts</b>, and a season-long history.</li>
+        <li><b>Scoring NFOPD's own blend over time.</b> This needs server-side storage, such as a nightly Vercel job writing to Redis or Blob storage.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="sources">
+    <p>OpenSnow plans and prices: <a href="https://support.opensnow.com/subscription/free-vs-base-vs-premium-features" target="_blank" rel="noopener">support.opensnow.com: Free vs Base vs Premium features</a>, read November 25, 2026. Plan contents change; check that page before relying on it.</p>
+    <p>NFOPD: <a href="/">open the app at nfopd.vercel.app</a> · <a href="https://github.com/jmcdannel/nfopd" target="_blank" rel="noopener">source on GitHub</a>. Counts in the summary cover the 27 rows above. "Full support" counts rows where NFOPD is Yes. "Only NFOPD has" counts rows where NFOPD is Yes and every OpenSnow plan is No or not listed. "Gaps to close" counts rows where NFOPD is Partly or No and at least one OpenSnow plan is Yes.</p>
+  </footer>
+</div>
+</body></html>
