@@ -175,6 +175,10 @@ select.plain { appearance: none; background: var(--night-2) url("data:image/svg+
 .hero-title::after { content: ""; display: block; width: 132px; height: 10px; margin-top: 18px; background: repeating-linear-gradient(90deg, var(--blaze) 0 22px, transparent 22px 28px); }
 .hero-sub { margin: 0; max-width: 60ch; font-size: 18px; color: var(--snow-edge); }
 .home-h { font-size: 26px; margin-top: 6px; }
+/* Hold space for content that arrives late, so the page doesn't jump (and the footer never flashes at the top). */
+#main { min-height: 100vh; }
+#daily-body { min-height: 300px; }
+.fav-card { min-height: 138px; }
 .favs { display: grid; gap: 12px; min-width: 0; }
 .favstrip > * { min-width: 0; }
 .fav-src { font-size: 12px; line-height: 1.2; color: var(--mute); white-space: nowrap; }
@@ -433,6 +437,7 @@ footer p { max-width: 90ch; margin: 0 0 6px; }
     <div class="search-results" id="qres" hidden></div>
   </div>
   <div class="status" id="status"><span class="dot" id="sdot"></span><span class="lbl" id="slabel">Starting</span></div>
+  <button class="iconbtn" id="feedback" type="button" aria-label="Send feedback" title="Send feedback" hidden><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5.5L7 16.5v-3H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
   <button class="iconbtn" id="install" type="button" aria-label="Install NFOPD as an app" title="Install app" hidden><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 15.5h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="iconbtn" id="refresh" type="button" aria-label="Refresh data" title="Refresh data"><svg class="icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3.5v3.2h-3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </header>
@@ -2494,8 +2499,16 @@ function jumpTo(t, behavior) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   el.scrollIntoView({ behavior: behavior || (reduce ? 'auto' : 'smooth'), block: 'start' });
 }
+// A section that fails to load is worth knowing about (when error tracking is on): one report per kind of failure per visit.
+const reported = new Set();
+function reportIssue(what, msg) {
+  const key = what + '|' + msg.replace(/\d+/g, '#');
+  if (reported.has(key) || !window.Sentry?.captureMessage) return;
+  reported.add(key); window.Sentry.captureMessage(`${what} could not load: ${msg}`, 'warning');
+}
 function errBox(what, e) {
   const msg = String(e?.message || e);
+  if (Net.mode !== 'snapshot') reportIssue(what, msg);
   if (/\b429\b/.test(msg)) return `<p class="err">${esc(what)} could not load: the weather-model service is limiting requests right now, and there's no saved copy for this yet. It usually clears within a few minutes; Refresh then.</p>`;
   return `<p class="err">${esc(what)} could not load: ${esc(msg)}. ${Net.mode === 'snapshot' ? 'Live data loads in the installed desktop app.' : 'Use Refresh to try again.'}</p>`;
 }

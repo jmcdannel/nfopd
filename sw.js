@@ -2,7 +2,7 @@
 // The page is always fetched fresh when there's a connection (every deploy shows up at once);
 // the cached copy is only the fallback. Forecast data is not cached here: the app keeps its own
 // copy in the browser and falls back to it for up to three days.
-const V = 'nfopd-shell-v2';
+const V = 'nfopd-shell-v3';
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.ico', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -31,8 +31,9 @@ self.addEventListener('fetch', e => {
   }
   if (url.pathname.startsWith('/proxy') || url.pathname.startsWith('/api/')) return; // live data: network only
   if (req.mode === 'navigate') {
-    const key = url.pathname === '/compare' ? '/compare' : '/';
-    e.respondWith(fetch(req).then(r => { if (r.ok) save(key, r.clone()); return r; }).catch(() => caches.match(key).then(hit => hit || caches.match('/'))));
+    const key = ['/compare', '/methods'].includes(url.pathname) ? url.pathname : '/';
+    const known = key !== '/' || url.pathname === '/' || url.pathname === '/index.html';
+    e.respondWith(fetch(req).then(r => { if (r.ok && known) save(key, r.clone()); return r; }).catch(() => caches.match(key).then(hit => hit || caches.match('/'))));
     return;
   }
   // Icons and the manifest: answer from the cache, refresh in the background.

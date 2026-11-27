@@ -40,9 +40,15 @@ Forecasts for North American resorts are read at an upper-mountain point for eac
 - **Track record.** For each resort with a nearby SNOTEL gauge, what the models forecast 1, 3 and 5 days ahead over the last 30 days, compared with the water the gauge measured. You see storm days caught and whether forecasts ran wet or dry.
 - **Snow timeline.** On every resort page: daily snowfall for the last 15 days, the last 24 hours and the next 15 days, grouped in 5-day blocks with totals and the model range. Past days are model estimates, not measurements.
 - **Pinpoint map.** Each forecast page shows a satellite map of the exact forecast point. Tap the map to move the point and load that spot's forecast.
-- **Kuchera snow ratio.** Models delivered as liquid × 7 are converted to snow with a temperature-based ratio. NBM already carries NOAA's own snow ratio, so its snowfall is used as issued.
+- **Snow from liquid, hour by hour.** Each model's hourly liquid is converted at the mountain's elevation: `snow = liquid × snowFraction(wet bulb) × min(10, 0.75 × Kuchera(T))` (`api/_snow.js`, served by `/api/snow`). Tested against 22 SNOTEL gauges over 48 days, it cut per-model daily error by 16% compared with the older daily method. NWS stays as issued. The full write-up with charts is at [/methods](https://nfopd.vercel.app/methods).
+- **BS meter.** Each western resort's reported new snow against the nearest SNOTEL gauge (the larger of its depth gain and ten times its water gain) over 24 hours, 48 hours and 7 days. Up to 1.3× counts as straight; it is an "early read" until three snow days are logged on the device.
+- **Server-side cache.** `api/_cache.js` keeps the last good copy of model and SNOTEL data in Vercel's Runtime Cache, so one fetch serves every visitor and a rate limit shows saved data instead of an error. `serve.py` does the same in memory.
 - **Three-way 24-hour check.** The resort's reported new snow, the SNOTEL depth gain and the model estimate, side by side.
 - **Snow level against the mountain.** The snow level is plotted against base and summit elevation.
+
+## Error tracking and feedback
+
+`build.py` adds Sentry (errors, plus a Feedback button in the top bar) to the website build when a DSN is set: put it in `SENTRY_DSN` in `build.py`, or run `NFOPD_SENTRY_DSN=... python3 build.py`. With no DSN, nothing is loaded.
 
 ## Brand
 

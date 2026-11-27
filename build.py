@@ -9,6 +9,8 @@
   `await NFOPD.saveSnapshot()` in the browser console.
 """
 import json
+import os
+import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -35,6 +37,36 @@ SKELETON = (
     '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
     "</head><body>"
 )
+# Sentry: error tracking and a feedback form (website only). Paste the project's DSN here, or set NFOPD_SENTRY_DSN
+# when building; with no DSN nothing is loaded and the Feedback button stays hidden. A DSN is public by design.
+SENTRY_DSN = os.environ.get("NFOPD_SENTRY_DSN", "")
+SENTRY_SDK = "https://browser.sentry-cdn.com/9.47.1/bundle.feedback.min.js"
+
+
+def sentry_snippet(dsn: str) -> str:
+    if not dsn:
+        return ""
+    try:
+        release = "nfopd@" + subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=HERE, capture_output=True, text=True).stdout.strip()
+    except OSError:
+        release = "nfopd"
+    # Errors raised before the SDK arrives are held and sent once it loads. The SDK loads after the page, so it never slows first paint.
+    return (
+        "<script>(function(){var early=[];function hold(e){early.push(e.error||e.reason||e.message)}"
+        "addEventListener('error',hold);addEventListener('unhandledrejection',hold);"
+        "addEventListener('load',function(){var s=document.createElement('script');s.src=" + json.dumps(SENTRY_SDK) + ";s.crossOrigin='anonymous';"
+        "s.onload=function(){removeEventListener('error',hold);removeEventListener('unhandledrejection',hold);"
+        "Sentry.init({dsn:" + json.dumps(dsn) + ",release:" + json.dumps(release) + ","
+        "environment:location.hostname==='nfopd.vercel.app'?'production':'development',sendDefaultPii:false,"
+        "ignoreErrors:['ResizeObserver loop','Load failed','Failed to fetch','NetworkError'],"
+        "integrations:[Sentry.feedbackIntegration({autoInject:false,colorScheme:'dark',showBranding:false,isNameRequired:false,isEmailRequired:false,"
+        "formTitle:'Send feedback',messagePlaceholder:'What went wrong, or what would make NFOPD better?',submitButtonLabel:'Send',successMessageText:'Thanks. Got it.'})]});"
+        "early.forEach(function(e){e instanceof Error?Sentry.captureException(e):e&&Sentry.captureMessage(String(e))});"
+        "var fb=Sentry.getFeedback&&Sentry.getFeedback(),btn=document.getElementById('feedback');if(fb&&btn){btn.hidden=false;fb.attachTo(btn)}};"
+        "document.head.appendChild(s)})})();</script>"
+    )
+
+
 # The service worker makes the site installable and lets it open offline (see sw.js).
 PWA = "<script>if ('serviceWorker' in navigator) addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });</script>"
 
@@ -45,8 +77,8 @@ ANALYTICS = (
     "<script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>"
     '<script defer src="/_vercel/speed-insights/script.js"></script>'
 )
-(HERE / "index.html").write_text(SKELETON + page + ANALYTICS + PWA + "</body></html>\n", "utf-8")
-print("index.html written")
+(HERE / "index.html").write_text(SKELETON + page + ANALYTICS + PWA + sentry_snippet(SENTRY_DSN) + "</body></html>\n", "utf-8")
+print("index.html written" + (" (Sentry on)" if SENTRY_DSN else " (Sentry off: no DSN set)"))
 
 snap_path = HERE / "snapshot.json"
 if snap_path.exists():

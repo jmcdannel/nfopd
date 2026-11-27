@@ -1,0 +1,755 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0B1626"><meta name="description" content="How NFOPD (No Friends On Powder Days) turns public forecasts and snow gauges into its snow numbers: the forecast point, the liquid-to-snow formula, the model blend, odds, confidence and the BS meter."><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22NFOPD%22%3E%20%20%3Ctitle%3ENFOPD%3A%20No%20Friends%20On%20Powder%20Days%3C/title%3E%20%20%3Cdefs%3E%3CclipPath%20id%3D%22tile%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22/%3E%3C/clipPath%3E%3C/defs%3E%20%20%3Cg%20clip-path%3D%22url%28%23tile%29%22%3E%20%20%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23FF6A13%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2211%22%20width%3D%2217%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2219.5%22%20width%3D%229%22%20height%3D%222.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Crect%20x%3D%229%22%20y%3D%2227%22%20width%3D%2217%22%20height%3D%223.6%22%20rx%3D%221%22%20fill%3D%22%230B1626%22/%3E%20%20%20%20%3Cpath%20d%3D%22M0%2037%20C%2010%2032%2C%2019%2039%2C%2031%2034%20S%2052%2029%2C%2064%2034%20V64%20H0%20Z%22%20fill%3D%22%23EEF3F8%22/%3E%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%230B1626%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%3E%20%20%20%20%20%20%3Cpath%20d%3D%22M40%2035%20C%2047.6%2038.6%2C%2047.6%2041.4%2C%2040%2045%20S%2032.4%2051.4%2C%2040%2055%20S%2047.6%2061.4%2C%2040%2065%20S%2032.4%2071.4%2C%2040%2075%22/%3E%20%20%20%20%20%20%3Cpath%20d%3D%22M40%2035%20C%2032.4%2038.6%2C%2032.4%2041.4%2C%2040%2045%20S%2047.6%2051.4%2C%2040%2055%20S%2032.4%2061.4%2C%2040%2065%20S%2047.6%2071.4%2C%2040%2075%22/%3E%20%20%20%20%3C/g%3E%20%20%3C/g%3E%3C/svg%3E"><title>How NFOPD calculates</title><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: NFOPD's pre-dawn world, same tokens as compare.html. Short version first, then numbered method sections, each with its formula and a chart drawn from that formula. Single dark theme by choice. */
+:root {
+  --night: #0B1626; --night-2: #111F33; --night-3: #18294A; --rule: #24384F;
+  --snow: #EEF3F8; --mute: #9AAEC5; --blaze: #FF6A13; --ink: #10151C; --powder: #6FB4FF; --lamp: #F6C46A;
+  --yes: #5CD38F; --part: #F6C46A; --no: #FF8577; --dim: #6E839C;
+  --f-sign: "Barlow Condensed", "Arial Narrow", sans-serif; --f-text: "Barlow", -apple-system, "Segoe UI", sans-serif;
+  --f-code: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--night); color: var(--snow); font: 16px/1.55 var(--f-text); margin: 0; font-variant-numeric: tabular-nums; }
+::selection { background: var(--blaze); color: var(--ink); }
+a { color: var(--powder); text-underline-offset: 3px; }
+.page { max-width: 1080px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+.page > *, .sec > *, figure > * { min-width: 0; }
+header { display: grid; gap: 14px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.brand svg { width: 44px; height: 44px; }
+.word { font: italic 800 34px/0.9 var(--f-sign); letter-spacing: .035em; }
+.word .pd { color: var(--powder); }
+.vs { font: 700 18px/1 var(--f-sign); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.nav { display: flex; flex-wrap: wrap; gap: 6px 22px; font: 700 16px/1 var(--f-sign); letter-spacing: .1em; text-transform: uppercase; }
+.nav a { color: var(--snow); text-decoration: none; padding: 8px 0; border-bottom: 2px solid var(--rule); }
+.nav a:hover, .nav a:focus-visible { border-bottom-color: var(--blaze); }
+h1 { font: 800 clamp(34px, 6vw, 52px)/1.02 var(--f-sign); margin: 0; text-wrap: balance; max-width: 20ch; }
+.lede { margin: 0; max-width: 64ch; font-size: 18px; color: var(--snow); }
+.meta { margin: 0; color: var(--mute); font-size: 14px; max-width: 75ch; }
+h2 { font: 700 28px/1.1 var(--f-sign); margin: 0; text-wrap: balance; }
+h3 { font: 700 20px/1.15 var(--f-sign); margin: 8px 0 0; }
+p { margin: 0; max-width: 68ch; }
+.k { font: 700 13px/1.2 var(--f-sign); letter-spacing: .1em; text-transform: uppercase; color: var(--lamp); }
+.sec { display: grid; gap: 16px; border-top: 1px solid var(--rule); padding-top: 28px; scroll-margin-top: 12px; }
+.sec > .k { margin-bottom: -10px; }
+.tldr { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--rule); max-width: 820px; }
+.tldr li { padding: 13px 0; border-bottom: 1px solid var(--rule); }
+.tldr b, .plain b { font-weight: 700; }
+.toc { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; max-width: 820px; }
+.toc a { display: inline-block; padding: 5px 0; }
+.plain { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 68ch; }
+.formula { margin: 0; max-width: 760px; padding: 12px 14px; background: var(--night-2); border-left: 2px solid var(--powder); font: 500 14px/1.65 var(--f-code); color: var(--snow); white-space: pre-wrap; overflow-wrap: anywhere; }
+figure { margin: 6px 0 0; display: grid; gap: 10px; max-width: 760px; }
+.fig-t { font: 700 20px/1.15 var(--f-sign); max-width: none; }
+.fig-t span { font: 500 14px/1.3 var(--f-text); color: var(--mute); margin-left: 6px; }
+figcaption { font-size: 15px; max-width: 68ch; }
+figcaption small, .small { display: block; font-size: 13px; color: var(--mute); margin-top: 4px; }
+.lg { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--mute); }
+.lg span { display: inline-flex; align-items: center; gap: 7px; }
+.lg i { display: inline-block; flex: none; background: var(--c); }
+.lg i.ln { width: 18px; height: 2px; border-radius: 1px; }
+.lg i.sw { width: 10px; height: 10px; border-radius: 2px; }
+.lg i.dot { width: 10px; height: 10px; border-radius: 50%; }
+.lg i.ring { width: 10px; height: 10px; border-radius: 50%; background: none; border: 2px solid var(--c); }
+.chart svg { display: block; max-width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.chart text { font: 500 12.5px var(--f-text); fill: var(--mute); font-variant-numeric: tabular-nums; }
+.chart .st { fill: var(--snow); font-weight: 600; font-size: 13px; }
+.chart .num { font: 800 26px var(--f-sign); fill: var(--snow); font-variant-numeric: normal; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { stroke: #3B526D; stroke-width: 1; }
+.chart .cross { stroke: var(--mute); stroke-width: 1; }
+#tip { position: fixed; z-index: 10; left: 0; top: 0; pointer-events: none; background: var(--night-3); border: 1px solid #3B526D; border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: var(--mute); max-width: 260px; }
+#tip b { color: var(--snow); font-weight: 700; }
+.table-wrap { overflow-x: auto; border-top: 2px solid var(--rule); max-width: 760px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+thead th { font: 700 14px/1.2 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+tbody th { font-weight: 600; }
+.t-ev th:first-child { width: 46%; } .t-ratio th, .t-ratio td { padding-right: 6px; } .t-hours { min-width: 560px; }
+tfoot td, tfoot th { font-weight: 700; border-bottom: 0; }
+details { max-width: 760px; }
+summary { cursor: pointer; color: var(--powder); padding: 6px 0; font-size: 15px; }
+details .table-wrap { margin-top: 8px; }
+.score { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 18px; border-top: 1px solid var(--rule); max-width: 760px; }
+.score > div { padding: 12px 0 14px; border-bottom: 1px solid var(--rule); display: grid; gap: 4px; align-content: start; }
+.score .n { font: 800 30px/1 var(--f-sign); }
+.score .k { font-size: 12px; }
+.sources { border-top: 1px solid var(--rule); padding-top: 18px; color: var(--mute); font-size: 14px; display: grid; gap: 6px; }
+.sources p { margin: 0; max-width: 80ch; }
+</style></head><body>
+
+<div class="page">
+  <header>
+    <div class="top">
+      <a class="brand" href="/" aria-label="NFOPD: open the app">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><defs><clipPath id="t"><rect width="64" height="64" rx="14"/></clipPath></defs><g clip-path="url(#t)"><rect width="64" height="64" fill="#FF6A13"/><rect x="9" y="11" width="17" height="3.6" rx="1" fill="#0B1626"/><rect x="9" y="19.5" width="9" height="2.6" rx="1" fill="#0B1626"/><rect x="9" y="27" width="17" height="3.6" rx="1" fill="#0B1626"/><path d="M0 37 C 10 32, 19 39, 31 34 S 52 29, 64 34 V64 H0 Z" fill="#EEF3F8"/><g fill="none" stroke="#0B1626" stroke-width="2.4" stroke-linecap="round"><path d="M40 35 C 47.6 38.6, 47.6 41.4, 40 45 S 32.4 51.4, 40 55 S 47.6 61.4, 40 65 S 32.4 71.4, 40 75"/><path d="M40 35 C 32.4 38.6, 32.4 41.4, 40 45 S 47.6 51.4, 40 55 S 32.4 61.4, 40 65 S 47.6 71.4, 40 75"/></g></g></svg>
+        <span class="word">NFO<span class="pd">PD</span></span><span class="vs">Methods</span>
+      </a>
+      <nav class="nav" aria-label="Site"><a href="/">Open the app</a><a href="/compare">Vs OpenSnow</a></nav>
+    </div>
+    <h1>How NFOPD calculates</h1>
+    <p class="lede">Every snow number in NFOPD comes from public forecasts and snow gauges, run through the same few steps. Here is the short version, then the full method with the formulas, the charts and the test results so far.</p>
+    <p class="meta">Last updated November 27, 2026. The snow formula was tuned on early-season storms and will be re-checked mid-winter. Charts marked "illustrative" use made-up inputs run through the real formulas.</p>
+  </header>
+
+  <section aria-labelledby="tldr-h" style="display:grid;gap:14px">
+    <h2 id="tldr-h">The short version</h2>
+    <ul class="tldr">
+      <li><b>The number is a blend.</b> Each day's snow total is a weighted average of the official National Weather Service (NWS) forecast, in the US, and up to six weather models.</li>
+      <li><b>It is read high on the mountain.</b> NFOPD picks a point about 85% of the way from base to summit, because a forecast at the base village can miss most of a storm.</li>
+      <li><b>Liquid becomes snow hour by hour.</b> Each hour's liquid precipitation is multiplied by the share falling as snow and by a snow ratio that tops out at 10 inches of snow per inch of water.</li>
+      <li><b>No single model runs the show.</b> Sources are weighted from 1 to 3, and when four or more report, the highest and the lowest are left out of the average.</li>
+      <li><b>Confidence means agreement.</b> The odds and the likely range come from 82 alternate model runs; the confidence score is the share of those runs that land near the middle one.</li>
+      <li><b>The BS meter checks resort snow reports.</b> It divides the new snow a resort reports by what the nearest automated snow gauge recorded, and treats anything up to 1.3 times the gauge as honest.</li>
+      <li><b>What is uncertain.</b> The snow formula was tested on about seven weeks of early-season storms, past days on the timeline are model estimates, and no human forecaster reviews any of it.</li>
+    </ul>
+    <noscript><p class="meta">The charts on this page are drawn by a small script from the formulas shown. Turn on JavaScript to see them.</p></noscript>
+  </section>
+
+  <nav aria-label="On this page" style="display:grid;gap:8px">
+    <span class="k">The detailed version</span>
+    <ol class="toc">
+      <li><a href="#forecast-point">1. Forecast point</a></li>
+      <li><a href="#sources">2. Sources</a></li>
+      <li><a href="#liquid-to-snow">3. Liquid to snow</a></li>
+      <li><a href="#evidence">4. Test results</a></li>
+      <li><a href="#blend">5. The blend</a></li>
+      <li><a href="#odds">6. Odds and confidence</a></li>
+      <li><a href="#last-24">7. Last 24 hours and timeline</a></li>
+      <li><a href="#track-record">8. Track record</a></li>
+      <li><a href="#season">9. Season so far</a></li>
+      <li><a href="#bs-meter">10. BS meter</a></li>
+      <li><a href="#daily">11. NFOPD Daily</a></li>
+      <li><a href="#freshness">12. Freshness</a></li>
+      <li><a href="#limits">13. What NFOPD doesn't do</a></li>
+    </ol>
+  </nav>
+
+  <section class="sec" id="forecast-point" aria-labelledby="h-a">
+    <span class="k">1 · Forecast point</span>
+    <h2 id="h-a">Where the forecast is read</h2>
+    <p>Resorts are listed at their base village. There, the National Weather Service's 2.5 km forecast cell and the weather models can sit on the valley floor, well below the skiing.</p>
+    <p>For each North American resort, NFOPD picks an upper-mountain point instead. It checks a grid of spots about 1.1 km apart around the listed location and takes the one whose ground elevation (from SRTM 30 m terrain data) is closest to 85% of the way from base to summit, with a penalty for distance. The search reaches about 5 km.</p>
+    <pre class="formula">search radius
+  = 4 × vertical drop,
+    kept between 1.5 km and 5.5 km,
+    plus 1 km
+target elevation
+  = base + 0.85 × (summit − base)
+score
+  = |ground elevation − target|
+    + 150 ft × distance in km
+the lowest score wins</pre>
+    <figure>
+      <p class="fig-t">One storm, two forecast points <span>Tamarack, Idaho</span></p>
+      <div class="chart" id="c-terrain"></div>
+      <figcaption>At Tamarack, moving the forecast point 3.5 km west and 2,330 feet higher changed the NWS forecast for the same storm from 0.1 inches to 9.4 inches.<small>The two points, their elevations and both forecasts are real. The terrain shape between them is a sketch.</small></figcaption>
+    </figure>
+    <p>The models are then asked for the summit elevation and the base elevation separately. Open-Meteo, the service that supplies the model data, adjusts temperature for elevation. Each forecast page has a pinpoint map showing the point, and tapping the map moves it.</p>
+  </section>
+
+  <section class="sec" id="sources" aria-labelledby="h-b">
+    <span class="k">2 · Sources</span>
+    <h2 id="h-b">What goes in</h2>
+    <ul class="plain">
+      <li><b>Official forecast.</b> The NWS grid forecast, for US resorts, used as issued.</li>
+      <li><b>Models in North America,</b> through Open-Meteo: NBM, HRRR (first 2 days), GFS, ECMWF, GEM and ICON.</li>
+      <li><b>Models in Europe:</b> GFS, ECMWF, ICON, Météo-France, UK Met Office and GEM. In Japan, JMA replaces Météo-France. The Southern Hemisphere adds BOM ACCESS.</li>
+      <li><b>Ensembles.</b> An ensemble is one model run many times from slightly different starting conditions; each run is a member. NFOPD uses 31 GEFS members and 51 ECMWF members, 82 in all.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="liquid-to-snow" aria-labelledby="h-c">
+    <span class="k">3 · The core</span>
+    <h2 id="h-c">Liquid to snow</h2>
+    <p>This is the core of the forecast. NFOPD takes each model's liquid precipitation and converts it to snow hour by hour, at the mountain's elevation, for every model and every ensemble member:</p>
+    <pre class="formula">snow = liquid
+     × snowFraction(wetBulb)
+     × ratio(temperature)</pre>
+
+    <h3>Rain or snow: the snow fraction</h3>
+    <p>Wet-bulb temperature is what a thermometer wrapped in a wet cloth reads. In dry air it runs below the air temperature, which is why snow can fall when the air is a little above freezing. All of an hour's precipitation counts as snow at a wet-bulb temperature of 31°F or colder, none at 34°F or warmer, with a straight line in between. If a model has no wet bulb, air temperature is used and the line runs from 32°F to 35°F.</p>
+    <pre class="formula">snowFraction = (34 − wetBulb) ÷ 3
+  limited to 0–1, wetBulb in °F</pre>
+    <figure>
+      <p class="fig-t">Snow fraction by temperature</p>
+      <div class="lg" aria-hidden="true"><span><i class="ln" style="--c:var(--powder)"></i>Wet-bulb temperature</span><span><i class="ln" style="--c:var(--dim)"></i>Air temperature, used only when a model has no wet bulb</span></div>
+      <div class="chart" id="c-frac"></div>
+      <figcaption>Between 31°F and 34°F wet bulb, each degree of warming turns another third of the precipitation to rain.</figcaption>
+    </figure>
+
+    <h3>How deep: the snow ratio</h3>
+    <p>The ratio is inches of snow per inch of liquid. NFOPD starts from the Kuchera formula, a standard estimate that makes colder snow fluffier, takes 75% of it and caps the result at 10.</p>
+    <pre class="formula">ratio = min(10, 0.75 × kuchera(T))
+
+kuchera(T), T = air temp in kelvins:
+  above 271.16 K (28.4°F):
+    12 + 2 × (271.16 − T)
+  271.16 K and colder:
+    12 + (271.16 − T)
+  limited to 3–25</pre>
+    <figure>
+      <p class="fig-t">Snow ratio by temperature</p>
+      <div class="lg" aria-hidden="true"><span><i class="ln" style="--c:var(--powder)"></i>NFOPD ratio</span><span><i class="ln" style="--c:var(--dim)"></i>Plain Kuchera, for reference</span></div>
+      <div class="chart" id="c-ratio"></div>
+      <figcaption>NFOPD's ratio is 10 to 1 at 26°F and colder and falls to 6.0 at 32°F, while plain Kuchera keeps climbing past 20 to 1 in deep cold.</figcaption>
+      <div class="table-wrap"><table class="t-ratio" aria-label="Snow ratio at selected temperatures"><thead><tr id="ratio-head"><th scope="col">Air temp</th></tr></thead><tbody><tr id="ratio-nfopd"><th scope="row">NFOPD ratio</th></tr><tr id="ratio-kuchera"><th scope="row">Plain Kuchera</th></tr></tbody></table></div>
+    </figure>
+    <p>Hours are summed by local calendar day. A day counts only if at least 20 of its hours have data.</p>
+
+    <h3>A worked example</h3>
+    <figure>
+      <p class="fig-t">One storm, hour by hour <span>Illustrative: a made-up 24-hour storm</span></p>
+      <div class="lg" aria-hidden="true"><span><i class="sw" style="--c:var(--powder)"></i>Liquid</span><span><i class="ln" style="--c:var(--lamp)"></i>Air temperature</span><span><i class="ln" style="--c:var(--powder)"></i>Wet bulb (set 1°F below air)</span><span><i class="sw" style="--c:var(--snow)"></i>Snow</span></div>
+      <div class="chart" id="c-storm"></div>
+      <figcaption id="storm-cap">The same liquid makes little snow early in the storm, when it is warm, and the most snow per hour once it has cooled.</figcaption>
+      <details><summary>Show all 24 hours as a table</summary>
+        <div class="table-wrap"><table class="t-hours" aria-label="Worked example storm, hour by hour"><thead><tr><th scope="col">Hour</th><th scope="col">Liquid (in)</th><th scope="col">Air (°F)</th><th scope="col">Wet bulb (°F)</th><th scope="col">Snow fraction</th><th scope="col">Ratio</th><th scope="col">Snow (in)</th></tr></thead><tbody id="storm-rows"></tbody><tfoot id="storm-foot"></tfoot></table></div>
+      </details>
+    </figure>
+
+    <h3>Why not use the models' own snowfall</h3>
+    <p>A model decides rain versus snow at its own smoothed terrain, which is lower than the real mountain, so warm storms come out as rain. NFOPD's older method (daily model snowfall ÷ 7 × Kuchera at the day's maximum temperature) carried that error and was also too generous in cold storms. The two errors partly cancelled.</p>
+  </section>
+
+  <section class="sec" id="evidence" aria-labelledby="h-ev">
+    <span class="k">4 · Test results</span>
+    <h2 id="h-ev">How the new method scored against snow gauges</h2>
+    <p>SNOTEL is the US network of automated snow and water gauges in the western mountains. The old and new conversions were compared with 22 SNOTEL gauges from October 9 to November 25, 2026: 153 snow days and 121 storms.</p>
+    <figure>
+      <p class="fig-t">Average miss, old method and new</p>
+      <div class="lg" aria-hidden="true"><span><i class="sw" style="--c:var(--dim)"></i>Old method</span><span><i class="sw" style="--c:var(--powder)"></i>New method</span></div>
+      <div class="chart" id="c-ev"></div>
+      <figcaption>Against 22 gauges, the new method cut each model's average miss by 16% on daily totals and 22% on storm totals.</figcaption>
+    </figure>
+    <div class="table-wrap">
+      <table class="t-ev">
+        <thead><tr><th scope="col">Measure</th><th scope="col">Old method</th><th scope="col">New method</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Per-model daily error (mean absolute)</th><td>2.20 in</td><td>1.84 in (16% lower)</td></tr>
+          <tr><th scope="row">Per-model storm-total error</th><td>2.35 in</td><td>1.83 in (22% lower)</td></tr>
+          <tr><th scope="row">Blended-forecast daily error</th><td>1.87 in</td><td>1.57 in</td></tr>
+          <tr><th scope="row">ECMWF and ICON on marginal days (28–35°F): share of the snow that fell</th><td>44%</td><td>About 92%</td></tr>
+          <tr><th scope="row">Blend on cold days (under 28°F): forecast compared with what fell</th><td>26% too high</td><td>About right (1.01)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>What this test cannot tell you:</p>
+    <ul class="plain">
+      <li>It is early-season data only. The constants are provisional and will be re-checked mid-winter.</li>
+      <li>SNOTEL measures settled depth, which reads roughly 10–25% lower than a snow-board count.</li>
+      <li>For blended storm totals, the improvement (12%) is not statistically certain.</li>
+      <li>HRRR and forecasts 3–7 days ahead were not tested.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="blend" aria-labelledby="h-d">
+    <span class="k">5 · The headline number</span>
+    <h2 id="h-d">The NFOPD blend</h2>
+    <p>For each day, the blend is a weighted average of the sources. The weights are NWS 3, NBM 3, HRRR 2, ECMWF 2, GFS 1, GEM 1 and ICON 1. Abroad: Météo-France 2, JMA 2, UK Met Office 1 and BOM 1.</p>
+    <p>When four or more sources report, the single highest and the single lowest are left out of the average, so one runaway model can't drive it. They still set the "model range" shown beside the number. NWS is included only for US resorts, at the upper-mountain elevation. The home-page rankings use the same blend without NWS.</p>
+    <pre class="formula">blend = sum(weight × snow)
+      ÷ sum(weight)
+with 4 or more sources, the highest
+and the lowest are left out first</pre>
+    <figure>
+      <p class="fig-t">One day, seven sources <span>Illustrative values</span></p>
+      <div class="lg" aria-hidden="true"><span><i class="dot" style="--c:var(--powder)"></i>In the average (bigger dot, more weight)</span><span><i class="ring" style="--c:var(--dim)"></i>Left out</span><span><i class="dot" style="--c:var(--blaze)"></i>NFOPD blend</span></div>
+      <div class="chart" id="c-blend"></div>
+      <pre class="formula" id="blend-math" aria-label="Blend arithmetic for this example"></pre>
+      <figcaption>With GFS (23.5 in) and NWS (9.4 in) left out, the weighted average of the other five is 14.2 inches, and the model range still shows 9.4 to 23.5 inches.</figcaption>
+    </figure>
+  </section>
+
+  <section class="sec" id="odds" aria-labelledby="h-e">
+    <span class="k">6 · Uncertainty</span>
+    <h2 id="h-e">Odds and confidence</h2>
+    <p>These come from the 82 ensemble members' snow totals for days 1–5, 6–10 and 11–15.</p>
+    <ul class="plain">
+      <li><b>Likely range:</b> the 10th to the 90th percentile. The 10th percentile is the total that 10% of members fall below.</li>
+      <li><b>Chance of 1, 6, 12 and 24 inches or more:</b> the share of members at or above that amount.</li>
+      <li><b>Confidence score, 0 to 100:</b> the share of members within ±40% of the median, the middle member (or within ±1 inch, whichever is larger). High is 70 or more, Medium is 45 or more, otherwise Low.</li>
+    </ul>
+    <figure>
+      <p class="fig-t">82 members, one 5-day window <span>Illustrative values</span></p>
+      <div class="lg" aria-hidden="true"><span><i class="dot" style="--c:var(--powder)"></i>Member within ±40% of the median</span><span><i class="dot" style="--c:var(--dim)"></i>Member outside it</span></div>
+      <div class="chart" id="c-ens"></div>
+      <figcaption id="ens-cap">The more members that fall inside the shaded band around the median, the higher the confidence score.</figcaption>
+      <div class="score" id="ens-stats" aria-label="What the app would show for this example"></div>
+    </figure>
+  </section>
+
+  <section class="sec" id="last-24" aria-labelledby="h-f">
+    <span class="k">7 · Measured snow</span>
+    <h2 id="h-f">Last 24 hours and the snow timeline</h2>
+    <p>The last-24-hours number comes from the best available source, in this order: the resort's own report, the nearest SNOTEL gauge (within 45 km, matched for elevation), then the model.</p>
+    <p>The timeline shows 15 days back, the last 24 hours, and 15 days ahead in 5-day blocks. The days back are model estimates, not measurements. A block's range is the lowest and the highest single-model total.</p>
+  </section>
+
+  <section class="sec" id="track-record" aria-labelledby="h-g">
+    <span class="k">8 · Accountability</span>
+    <h2 id="h-g">Track record</h2>
+    <p>For resorts near a SNOTEL gauge, NFOPD shows what the models forecast 1, 3 and 5 days ahead over the last 30 days, compared with the water the gauge measured. The comparison is in liquid, so the snow ratio doesn't blur it. A "storm day" is 0.15 inches of water or more.</p>
+  </section>
+
+  <section class="sec" id="season" aria-labelledby="h-h">
+    <span class="k">9 · History</span>
+    <h2 id="h-h">Season so far</h2>
+    <p>Season snowfall uses hourly ERA5/ECMWF reanalysis, a reconstruction of past weather, at summit elevation since October 1 (May 1 in the Southern Hemisphere), run through the same liquid-to-snow conversion. Beside it is the SNOTEL snowpack as a percentage of its 30-year median. It's an estimate.</p>
+  </section>
+
+  <section class="sec" id="bs-meter" aria-labelledby="h-i">
+    <span class="k">10 · Resort report check</span>
+    <h2 id="h-i">BS meter</h2>
+    <p>The BS meter compares the new snow a resort reports with what the nearest SNOTEL gauge recorded over the same window: the last 24 hours, 48 hours and 7 days. It covers western US resorts with a gauge within 45 km.</p>
+    <pre class="formula">gauge snow = the larger of
+  depth gain  and  10 × water gain
+ratio = reported snow ÷ gauge snow</pre>
+    <p>Depth gain is the sum of the gauge's day-over-day rises in snow depth. The snowpack settles while it snows, so depth alone undercounts long storms; water doesn't settle. A window counts only when the report or the gauge snow is 2 inches or more, and gauge snow under 1 inch is treated as 1 inch.</p>
+    <figure>
+      <p class="fig-t">The scale</p>
+      <div class="chart" id="c-bs"></div>
+      <figcaption>A ratio up to 1.3 counts as a straight shooter, because the gauge still reads lower than a fresh count on the upper mountain; it takes more than 1.8 to be called sugar-coated.<small>Illustrative example: the gauge's depth rose 6 inches and its water rose 0.8 inches, so gauge snow is 8 inches (10 × 0.8). A 10-inch report scores 1.25.</small></figcaption>
+    </figure>
+    <p>The app saves each day's pair of numbers on your device. Until three snow days have been logged, the verdict is shown as an "Early read" from the longest window available, and it says it is a small sample. After three logged snow days it uses the sum over all of them. If the gauge is more than 8 km from the resort, the meter says to treat it as a rough read. It does not score resorts' own forecasts, which NFOPD doesn't read.</p>
+  </section>
+
+  <section class="sec" id="daily" aria-labelledby="h-j">
+    <span class="k">11 · The write-up</span>
+    <h2 id="h-j">NFOPD Daily</h2>
+    <p>The regional write-up is AI-generated from NWS forecaster discussions and model numbers. It is not written by a person. It's labelled that way and links its sources.</p>
+  </section>
+
+  <section class="sec" id="freshness" aria-labelledby="h-k">
+    <span class="k">12 · Timing</span>
+    <h2 id="h-k">Freshness</h2>
+    <p>Single-resort data refreshes about every 30 minutes, and region rankings every 3 hours. If a data provider is rate-limiting, NFOPD shows the last good copy (up to 3 days old) rather than nothing.</p>
+  </section>
+
+  <section class="sec" id="limits" aria-labelledby="h-l">
+    <span class="k">13 · Limits</span>
+    <h2 id="h-l">What NFOPD doesn't do</h2>
+    <ul class="plain">
+      <li>There are no human forecasters.</li>
+      <li>Official national forecasts and avalanche bulletins outside the US and Canada aren't read. Those resorts get models only.</li>
+      <li>Past days on the timeline are estimates, not measurements.</li>
+      <li>Forecast points are a terrain-based pick and may sit on a neighboring ridge.</li>
+    </ul>
+  </section>
+
+  <footer class="sources">
+    <p>Data: National Weather Service grid forecasts, weather models and ensembles through Open-Meteo, SNOTEL gauges, ERA5/ECMWF reanalysis and SRTM terrain. The charts are drawn in the page from the formulas and numbers shown beside them.</p>
+    <p>NFOPD: <a href="/">open the app at nfopd.vercel.app</a> · <a href="/compare">NFOPD vs OpenSnow</a> · <a href="https://github.com/jmcdannel/nfopd" target="_blank" rel="noopener">source on GitHub</a>.</p>
+  </footer>
+</div>
+<div id="tip" aria-hidden="true" hidden></div>
+<script>
+(function () {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  var COL = { night: '#0B1626', snow: '#EEF3F8', mute: '#9AAEC5', dim: '#6E839C', powder: '#6FB4FF', blaze: '#FF6A13', lamp: '#F6C46A', yes: '#5CD38F', no: '#FF8577', land: '#18294A' };
+  function $(id) { return document.getElementById(id); }
+  function s(tag, attrs, parent, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function h(tag, text, parent, cls) {
+    var e = document.createElement(tag);
+    if (text != null) e.textContent = text;
+    if (cls) e.className = cls;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function lin(d0, d1, r0, r1) { return function (v) { return r0 + (v - d0) / (d1 - d0) * (r1 - r0); }; }
+  function pct(v) { return Math.round(v * 100) + '%'; }
+
+  /* ---- The formulas. Every chart below is drawn from these. ---- */
+  function kuchera(tF) {
+    var tk = (tF - 32) * 5 / 9 + 273.15;
+    var r = tk > 271.16 ? 12 + 2 * (271.16 - tk) : 12 + (271.16 - tk);
+    return Math.max(3, Math.min(25, r));
+  }
+  function ratio(tF) { return Math.min(10, 0.75 * kuchera(tF)); }
+  function snowFraction(wetBulbF) { return Math.max(0, Math.min(1, (34 - wetBulbF) / 3)); }
+  function snowFractionAir(tF) { return Math.max(0, Math.min(1, (35 - tF) / 3)); }
+  var WEIGHTS = { NWS: 3, NBM: 3, HRRR: 2, ECMWF: 2, GFS: 1, GEM: 1, ICON: 1 };
+  function blend(src) {
+    var sorted = src.slice().sort(function (a, b) { return a.v - b.v; });
+    var lo = null, hi = null;
+    if (sorted.length >= 4) { lo = sorted[0]; hi = sorted[sorted.length - 1]; }
+    var kept = src.filter(function (p) { return p !== lo && p !== hi; });
+    var sw = 0, sv = 0;
+    kept.forEach(function (p) { sw += WEIGHTS[p.name]; sv += WEIGHTS[p.name] * p.v; });
+    return { value: sv / sw, wsum: sw, kept: kept, lo: lo, hi: hi, sorted: sorted, min: sorted[0].v, max: sorted[sorted.length - 1].v };
+  }
+  function ensembleStats(members) {
+    var tot = members.slice().sort(function (a, b) { return a - b; }), n = tot.length;
+    function q(p) { var i = p * (n - 1), lo = Math.floor(i), hi = Math.ceil(i); return tot[lo] + (tot[hi] - tot[lo]) * (i - lo); }
+    var p50 = q(0.5), tol = Math.max(1, p50 * 0.4);
+    function share(f) { return Math.round(100 * tot.filter(f).length / n); }
+    var inBand = function (x) { return Math.abs(x - p50) <= tol; };
+    var score = share(inBand);
+    return { n: n, tot: tot, p10: q(0.1), p50: p50, p90: q(0.9), tol: tol, inBand: inBand, inCount: tot.filter(inBand).length, score: score,
+      label: score >= 70 ? 'High' : score >= 45 ? 'Medium' : 'Low',
+      chance: { 1: share(function (x) { return x >= 1; }), 6: share(function (x) { return x >= 6; }), 12: share(function (x) { return x >= 12; }), 24: share(function (x) { return x >= 24; }) } };
+  }
+
+  /* ---- Illustrative inputs (made up, labelled as such on the page) ---- */
+  var STORM = (function () {
+    var hundredths = [1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 6, 5, 5, 4, 4, 4, 3, 3, 2, 2, 2];
+    var rows = [], liquid = 0, snow = 0;
+    hundredths.forEach(function (c, i) {
+      var t = 35 - 8 * i / 23, wb = t - 1, l = c / 100, f = snowFraction(wb), r = ratio(t), sn = l * f * r;
+      liquid += l; snow += sn;
+      rows.push({ h: i + 1, l: l, t: t, wb: wb, f: f, r: r, s: sn });
+    });
+    return { rows: rows, liquid: liquid, snow: snow };
+  })();
+  var EXAMPLE = [{ name: 'NWS', v: 9.4 }, { name: 'NBM', v: 12.6 }, { name: 'HRRR', v: 11.0 }, { name: 'ECMWF', v: 15.6 }, { name: 'GFS', v: 23.5 }, { name: 'GEM', v: 15.8 }, { name: 'ICON', v: 21.2 }];
+  var BLEND = blend(EXAMPLE);
+  var MEMBERS = (function () {
+    var a = 56; /* fixed seed, so the example never changes */
+    function rnd() { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+    var m = [];
+    for (var i = 0; i < 82; i++) { var u = Math.max(1e-9, rnd()), v = rnd(); m.push(Math.round(9 * Math.exp(0.45 * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)) * 10) / 10); }
+    return m;
+  })();
+  var ENS = ensembleStats(MEMBERS);
+  var EVIDENCE = [{ k: 'Per-model daily total', old: 2.20, nw: 1.84 }, { k: 'Per-model storm total', old: 2.35, nw: 1.83 }, { k: 'Blended forecast, daily total', old: 1.87, nw: 1.57 }];
+
+  /* ---- Tooltip ---- */
+  var tip = $('tip'), tipTimer = 0;
+  function showTip(e, rows) {
+    clearTimeout(tipTimer); tip.replaceChildren();
+    rows.forEach(function (r) { var d = h('div', null, tip); h('b', r[0], d); if (r[1]) d.appendChild(document.createTextNode(' ' + r[1])); });
+    tip.hidden = false;
+    var tw = tip.offsetWidth, th = tip.offsetHeight, vw = document.documentElement.clientWidth;
+    var lx = Math.max(8, Math.min(vw - tw - 8, e.clientX + 14)), ty = e.clientY - th - 14;
+    if (ty < 8) ty = e.clientY + 18;
+    tip.style.left = lx + 'px'; tip.style.top = ty + 'px';
+  }
+  function hideTip() { clearTimeout(tipTimer); tip.hidden = true; }
+  function leaveTip(e) { if (e && e.pointerType === 'touch') { clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 2500); } else hideTip(); }
+  function hover(el, rowsFn) {
+    function on(e) { showTip(e, rowsFn()); }
+    el.addEventListener('pointerenter', on); el.addEventListener('pointermove', on); el.addEventListener('pointerleave', leaveTip);
+  }
+  function track(svg, w, xa, xb, hgt, onMove, onLeave) {
+    var r = s('rect', { x: xa, y: 0, width: xb - xa, height: hgt, fill: 'none', 'pointer-events': 'all' }, svg);
+    function mv(e) { var b = svg.getBoundingClientRect(); onMove(Math.max(xa, Math.min(xb, (e.clientX - b.left) * (w / b.width))), e); }
+    r.addEventListener('pointerenter', mv); r.addEventListener('pointermove', mv);
+    r.addEventListener('pointerleave', function (e) { onLeave(); leaveTip(e); });
+  }
+  window.addEventListener('scroll', hideTip, { passive: true });
+
+  /* ---- Chart scaffolding: each chart is redrawn at its container's width, so text stays 12px or larger ---- */
+  var charts = [];
+  function chart(id, maxW, draw) {
+    var host = $(id); if (!host) return;
+    charts.push(function () { var w = Math.round(Math.max(280, Math.min(host.clientWidth || maxW, maxW))); host.replaceChildren(); draw(host, w); });
+  }
+  function mk(host, w, hgt, label) {
+    var e = s('svg', { viewBox: '0 0 ' + w + ' ' + hgt, width: w, height: hgt, role: 'img', 'aria-label': label });
+    s('title', {}, e, label); host.appendChild(e); return e;
+  }
+  function xAxis(g, x, ticks, yb, xa, xb, title, fmt) {
+    s('line', { x1: xa, x2: xb, y1: yb, y2: yb, class: 'axis' }, g);
+    ticks.forEach(function (t) {
+      s('line', { x1: x(t), x2: x(t), y1: yb, y2: yb + 4, class: 'axis' }, g);
+      s('text', { x: x(t), y: yb + 18, 'text-anchor': 'middle' }, g, fmt ? fmt(t) : String(t));
+    });
+    if (title) s('text', { x: (xa + xb) / 2, y: yb + 38, 'text-anchor': 'middle' }, g, title);
+  }
+  function yGrid(g, y, ticks, xa, xb, fmt) {
+    ticks.forEach(function (t) {
+      s('line', { x1: xa, x2: xb, y1: y(t), y2: y(t), class: 'grid' }, g);
+      s('text', { x: xa - 7, y: y(t) + 4, 'text-anchor': 'end' }, g, fmt ? fmt(t) : String(t));
+    });
+  }
+  function pathOf(fn, a, b, step, x, y) {
+    var d = '';
+    for (var v = a; v <= b + 1e-9; v += step) d += (d ? 'L' : 'M') + x(v).toFixed(1) + ',' + y(fn(v)).toFixed(1);
+    return d;
+  }
+  function barV(x, y, w, hgt, r) { r = Math.max(0, Math.min(r, w / 2, hgt)); return 'M' + x + ',' + (y + hgt) + 'V' + (y + r) + 'q0,' + (-r) + ' ' + r + ',' + (-r) + 'h' + (w - 2 * r) + 'q' + r + ',0 ' + r + ',' + r + 'V' + (y + hgt) + 'Z'; }
+  function barH(x, y, w, hgt, r) { r = Math.max(0, Math.min(r, hgt / 2, w)); return 'M' + x + ',' + y + 'h' + (w - r) + 'q' + r + ',0 ' + r + ',' + r + 'v' + (hgt - 2 * r) + 'q0,' + r + ' ' + (-r) + ',' + r + 'H' + x + 'Z'; }
+  function lineHover(svg, w, x, y, xa, xb, ya, yb, dom, step, series, head) {
+    var g = s('g', { visibility: 'hidden', 'pointer-events': 'none' }, svg);
+    var vl = s('line', { y1: ya, y2: yb, class: 'cross' }, g);
+    var dots = series.map(function (sr) { return s('circle', { r: 4.5, fill: sr.c, stroke: COL.night, 'stroke-width': 2 }, g); });
+    track(svg, w, xa, xb, yb, function (px, e) {
+      var v = dom[0] + (px - xa) / (xb - xa) * (dom[1] - dom[0]); v = Math.round(v / step) * step;
+      g.setAttribute('visibility', 'visible'); vl.setAttribute('x1', x(v)); vl.setAttribute('x2', x(v));
+      var rows = [[head(v), '']];
+      series.forEach(function (sr, i) { var val = sr.f(v); dots[i].setAttribute('cx', x(v)); dots[i].setAttribute('cy', y(val)); rows.push([sr.fmt(val), sr.name]); });
+      showTip(e, rows);
+    }, function () { g.setAttribute('visibility', 'hidden'); });
+  }
+
+  /* ---- 1. Forecast point: Tamarack cross-section (real points, sketched terrain) ---- */
+  chart('c-terrain', 720, function (host, w) {
+    var H = 312, x0 = 58, x1 = w - 10, y0 = 80, y1 = 264;
+    var svg = mk(host, w, H, 'Cross-section at Tamarack, Idaho. Listed location at 4,865 feet: NWS forecast 0.1 inches. Upper-mountain point 3.5 km west at 7,195 feet: NWS forecast 9.4 inches for the same storm.');
+    var x = lin(4.0, -1.5, x0, x1), y = lin(4500, 7500, y1, y0);
+    function elev(k) {
+      if (k <= 0) return 4865;
+      var t = k / 3.5, u = Math.min(1, t / 1.25), g = 3 * u * u - 2 * u * u * u, e = 4865 + 2330 * g / 0.896;
+      if (t < 1) e += 60 * Math.sin(Math.PI * 5 * t) * t * (1 - t);
+      return e;
+    }
+    yGrid(svg, y, [5000, 6000, 7000], x0, x1, function (t) { return t.toLocaleString('en-US') + ' ft'; });
+    var d = 'M' + x0 + ',' + y1, top = '';
+    for (var k = 4.0; k >= -1.5 - 1e-9; k -= 0.05) { var pt = x(k).toFixed(1) + ',' + y(elev(k)).toFixed(1); d += 'L' + pt; top += (top ? 'L' : 'M') + pt; }
+    s('path', { d: d + 'L' + x1 + ',' + y1 + 'Z', fill: COL.land }, svg);
+    s('path', { d: top, fill: 'none', stroke: COL.dim, 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, svg);
+    xAxis(svg, x, [3.5, 0], y1, x0, x1, 'Distance west of the listed location', function (t) { return t ? '3.5 km west' : '0 km'; });
+    var ux = x(3.5), uy = y(7195), lx = x(0), ly = y(4865);
+    s('line', { x1: ux, x2: ux, y1: 68, y2: uy - 8, class: 'cross' }, svg);
+    s('circle', { cx: ux, cy: uy, r: 6, fill: COL.blaze, stroke: COL.night, 'stroke-width': 2 }, svg);
+    s('text', { x: ux - 5, y: 14, class: 'st' }, svg, 'Upper-mountain point, 7,195 ft');
+    s('text', { x: ux - 5, y: 31 }, svg, 'NWS forecast for the storm');
+    s('text', { x: ux - 5, y: 60, class: 'num' }, svg, '9.4 in');
+    var ty = y(6720);
+    s('line', { x1: lx, x2: lx, y1: ty + 52, y2: ly - 8, class: 'cross' }, svg);
+    s('circle', { cx: lx, cy: ly, r: 6, fill: COL.mute, stroke: COL.night, 'stroke-width': 2 }, svg);
+    s('text', { x: x1, y: ty, class: 'st', 'text-anchor': 'end' }, svg, 'Listed location, 4,865 ft');
+    s('text', { x: x1, y: ty + 17, 'text-anchor': 'end' }, svg, 'NWS forecast for the storm');
+    s('text', { x: x1, y: ty + 46, class: 'num', 'text-anchor': 'end' }, svg, '0.1 in');
+  });
+
+  /* ---- 3a. Snow fraction ---- */
+  chart('c-frac', 640, function (host, w) {
+    var H = 252, x0 = 46, x1 = w - 14, y0 = 34, y1 = H - 48;
+    var svg = mk(host, w, H, 'Line chart of snow fraction against temperature from 26 to 38°F. By wet bulb: 100% snow at 31°F and colder, falling in a straight line to 0% at 34°F. The air-temperature fallback runs from 32°F to 35°F.');
+    var x = lin(26, 38, x0, x1), y = lin(0, 1, y1, y0);
+    s('text', { x: 0, y: 13 }, svg, 'Share of precipitation counted as snow');
+    yGrid(svg, y, [0, 0.5, 1], x0, x1, pct);
+    xAxis(svg, x, [26, 28, 30, 32, 34, 36, 38], y1, x0, x1, 'Temperature (°F)');
+    s('path', { d: pathOf(snowFractionAir, 26, 38, 0.5, x, y), fill: 'none', stroke: COL.dim, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    s('path', { d: pathOf(snowFraction, 26, 38, 0.5, x, y), fill: 'none', stroke: COL.powder, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    s('text', { x: x(34 - 0.28 * 3) - 10, y: y(0.28) + 4, 'text-anchor': 'end', class: 'st' }, svg, 'Wet bulb');
+    s('text', { x: x(35 - 0.72 * 3) + 12, y: y(0.72) - 3 }, svg, 'Air temperature');
+    s('text', { x: x(35 - 0.72 * 3) + 12, y: y(0.72) + 13 }, svg, 'fallback');
+    s('text', { x: x0 + 6, y: y(1) + 17 }, svg, 'All snow');
+    s('text', { x: x1 - 4, y: y(0) - 8, 'text-anchor': 'end' }, svg, 'All rain');
+    lineHover(svg, w, x, y, x0, x1, y0, y1, [26, 38], 0.5, [
+      { f: snowFraction, c: COL.powder, name: 'snow, by wet bulb', fmt: pct },
+      { f: snowFractionAir, c: COL.dim, name: 'snow, by the air-temperature fallback', fmt: pct }
+    ], function (v) { return v.toFixed(1) + '°F'; });
+  });
+
+  /* ---- 3b. Snow ratio ---- */
+  chart('c-ratio', 640, function (host, w) {
+    var H = 284, x0 = 40, x1 = w - 14, y0 = 34, y1 = H - 48;
+    var svg = mk(host, w, H, 'Line chart of snow ratio against air temperature from 10 to 36°F. NFOPD: 10 to 1 at 26°F and colder, 9.2 at 28°F, 7.7 at 30°F, 6.0 at 32°F, 4.3 at 34°F. Plain Kuchera for reference: 22.2 at 10°F falling to 3.6 at 36°F.');
+    var x = lin(10, 36, x0, x1), y = lin(0, 25, y1, y0);
+    s('text', { x: 0, y: 13 }, svg, 'Inches of snow per inch of liquid');
+    yGrid(svg, y, [0, 5, 10, 15, 20, 25], x0, x1);
+    xAxis(svg, x, [10, 15, 20, 25, 30, 35], y1, x0, x1, 'Air temperature (°F)');
+    s('path', { d: pathOf(kuchera, 10, 36, 0.25, x, y), fill: 'none', stroke: COL.dim, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    s('path', { d: pathOf(ratio, 10, 36, 0.25, x, y), fill: 'none', stroke: COL.powder, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    s('text', { x: x(16), y: y(kuchera(16)) - 10 }, svg, 'Plain Kuchera');
+    s('text', { x: x(11), y: y(10) + 18, class: 'st' }, svg, 'NFOPD, capped at 10');
+    s('circle', { cx: x(32), cy: y(ratio(32)), r: 4.5, fill: COL.powder, stroke: COL.night, 'stroke-width': 2 }, svg);
+    s('text', { x: x(32) - 9, y: y(ratio(32)) + 17, 'text-anchor': 'end', class: 'st' }, svg, ratio(32).toFixed(1) + ' at 32°F');
+    function to1(v) { return v.toFixed(1) + ' to 1'; }
+    lineHover(svg, w, x, y, x0, x1, y0, y1, [10, 36], 0.5, [
+      { f: ratio, c: COL.powder, name: 'NFOPD', fmt: to1 },
+      { f: kuchera, c: COL.dim, name: 'plain Kuchera', fmt: to1 }
+    ], function (v) { return v.toFixed(1) + '°F'; });
+  });
+  (function () {
+    var head = $('ratio-head'), a = $('ratio-nfopd'), b = $('ratio-kuchera');
+    [20, 26, 28, 30, 32, 34].forEach(function (t) {
+      var th = h('th', t + '°F', head); th.scope = 'col';
+      h('td', ratio(t).toFixed(1), a); h('td', kuchera(t).toFixed(1), b);
+    });
+  })();
+
+  /* ---- 3c. Worked example storm: three panels sharing the hour axis (no dual axis) ---- */
+  chart('c-storm', 720, function (host, w) {
+    var x0 = 44, x1 = w - 12, ph = 96, head = 28, gap = 18, n = STORM.rows.length;
+    var tops = [head, head + ph + gap + head, head + 2 * (ph + gap + head)];
+    var yb = tops[2] + ph, H = yb + 46, slot = (x1 - x0) / n, bw = Math.max(4, Math.min(24, slot - 3));
+    var svg = mk(host, w, H, 'Illustrative 24-hour storm in three panels: liquid per hour totalling ' + STORM.liquid.toFixed(2) + ' inches; air temperature falling from 35°F to 27°F with the wet bulb 1°F lower; and the resulting snow per hour totalling ' + STORM.snow.toFixed(1) + ' inches.');
+    function cx(hr) { return x0 + (hr - 0.5) * slot; }
+    var hl = s('rect', { x: x0, y: tops[0], width: slot, height: yb - tops[0], fill: COL.snow, 'fill-opacity': 0.07, visibility: 'hidden' }, svg);
+    function panel(i, title, total, dom, ticks, fmt) {
+      var y = lin(dom[0], dom[1], tops[i] + ph, tops[i]);
+      s('text', { x: 0, y: tops[i] - 12, class: 'st' }, svg, title);
+      if (total) s('text', { x: x1, y: tops[i] - 12, class: 'st', 'text-anchor': 'end' }, svg, total);
+      yGrid(svg, y, ticks, x0, x1, fmt);
+      return y;
+    }
+    var f2 = function (t) { return t.toFixed(2); }, f1 = function (t) { return t.toFixed(1); };
+    var yl = panel(0, 'Liquid per hour (inches)', 'Total ' + STORM.liquid.toFixed(2) + ' in', [0, 0.1], [0, 0.05, 0.1], f2);
+    var yt = panel(1, 'Temperature (°F)', '', [23, 38], [26, 30, 34]);
+    var ys = panel(2, 'Snow per hour (inches)', 'Total ' + STORM.snow.toFixed(1) + ' in', [0, 0.6], [0, 0.3, 0.6], f1);
+    s('rect', { x: x0, y: yt(34), width: x1 - x0, height: yt(31) - yt(34), fill: COL.powder, 'fill-opacity': 0.12 }, svg);
+    s('text', { x: x1 - 6, y: (yt(34) + yt(31)) / 2 + 4, 'text-anchor': 'end' }, svg, 'Rain-to-snow zone');
+    var da = '', dw = '';
+    STORM.rows.forEach(function (r) {
+      s('path', { d: barV(cx(r.h) - bw / 2, yl(r.l), bw, yl(0) - yl(r.l), 3), fill: COL.powder }, svg);
+      if (r.s > 0.004) s('path', { d: barV(cx(r.h) - bw / 2, ys(r.s), bw, ys(0) - ys(r.s), 3), fill: COL.snow }, svg);
+      da += (da ? 'L' : 'M') + cx(r.h).toFixed(1) + ',' + yt(r.t).toFixed(1);
+      dw += (dw ? 'L' : 'M') + cx(r.h).toFixed(1) + ',' + yt(r.wb).toFixed(1);
+    });
+    s('path', { d: da, fill: 'none', stroke: COL.lamp, 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+    s('path', { d: dw, fill: 'none', stroke: COL.powder, 'stroke-width': 2, 'stroke-linecap': 'round' }, svg);
+    s('text', { x: cx(1) + 8, y: yt(35) - 6 }, svg, 'Air');
+    s('text', { x: x1 - 4, y: yt(26) + 15, 'text-anchor': 'end' }, svg, 'Wet bulb');
+    [tops[0] + ph, tops[1] + ph].forEach(function (yy) { s('line', { x1: x0, x2: x1, y1: yy, y2: yy, class: 'axis' }, svg); });
+    xAxis(svg, cx, [1, 6, 12, 18, 24], yb, x0, x1, 'Hour of the storm');
+    track(svg, w, x0, x1, yb, function (px, e) {
+      var i = Math.max(0, Math.min(n - 1, Math.floor((px - x0) / slot))), r = STORM.rows[i];
+      hl.setAttribute('x', x0 + i * slot); hl.setAttribute('visibility', 'visible');
+      showTip(e, [['Hour ' + r.h, ''], [r.l.toFixed(2) + ' in', 'of liquid'], [r.t.toFixed(1) + '°F', 'air, ' + r.wb.toFixed(1) + '°F wet bulb'], [pct(r.f) + ' snow × ' + r.r.toFixed(1), 'ratio'], [r.s.toFixed(2) + ' in', 'of snow']]);
+    }, function () { hl.setAttribute('visibility', 'hidden'); });
+  });
+  (function () {
+    var body = $('storm-rows'), foot = $('storm-foot'), mixed = 0;
+    STORM.rows.forEach(function (r) {
+      var tr = h('tr', null, body);
+      [String(r.h), r.l.toFixed(2), r.t.toFixed(1), r.wb.toFixed(1), pct(r.f), r.r.toFixed(1), r.s.toFixed(2)].forEach(function (c) { h('td', c, tr); });
+      if (r.f < 1) mixed++;
+    });
+    var tr = h('tr', null, foot);
+    ['Total', STORM.liquid.toFixed(2), '', '', '', '', STORM.snow.toFixed(2)].forEach(function (c) { h('td', c, tr); });
+    $('storm-cap').textContent = 'In this made-up storm, ' + STORM.liquid.toFixed(2) + ' inches of liquid becomes ' + STORM.snow.toFixed(1) + ' inches of snow: the first ' + mixed + ' hours lose part of their liquid to rain, and the same liquid makes more snow as the air cools.';
+  })();
+
+  /* ---- 4. Test results: old against new ---- */
+  chart('c-ev', 640, function (host, w) {
+    var x0 = 10, x1 = w - 68, gh = 66, top = 2, yb = top + EVIDENCE.length * gh, H = yb + 46;
+    var svg = mk(host, w, H, 'Bar chart of mean absolute error in inches against 22 SNOTEL gauges, old method then new. Per-model daily total: 2.20 and 1.84. Per-model storm total: 2.35 and 1.83. Blended forecast daily total: 1.87 and 1.57.');
+    var x = lin(0, 2.5, x0, x1);
+    EVIDENCE.forEach(function (g, i) {
+      var gy = top + i * gh, t = s('text', { x: x0, y: gy + 15, class: 'st' }, svg, g.k);
+      s('tspan', { dx: 8, style: 'font-weight:500;fill:' + COL.mute }, t, Math.round((g.old - g.nw) / g.old * 100) + '% lower');
+      [['old', COL.dim, 'Old method', ''], ['nw', COL.powder, 'New method', 'st']].forEach(function (b, j) {
+        var by = gy + 24 + j * 14, v = g[b[0]];
+        var bar = s('path', { d: barH(x0, by, x(v) - x0, 12, 4), fill: b[1] }, svg);
+        s('text', { x: x(v) + 7, y: by + 10.5, class: b[3] }, svg, v.toFixed(2) + ' in');
+        hover(bar, function () { return [[v.toFixed(2) + ' in', 'mean absolute error'], [b[2], g.k.toLowerCase()]]; });
+      });
+    });
+    xAxis(svg, x, [0, 0.5, 1, 1.5, 2, 2.5], yb, x0, x1, 'Mean absolute error (inches), lower is better', function (t) { return t.toFixed(1); });
+  });
+
+  /* ---- 5. The blend: one row per source ---- */
+  chart('c-blend', 640, function (host, w) {
+    var lab = 96, x0 = lab + 8, x1 = w - 20, rh = 30, top = 4, rows = BLEND.sorted;
+    var yBlend = top + rows.length * rh + 26, yRange = yBlend + 44, yb = yRange + 16, H = yb + 46;
+    var svg = mk(host, w, H, 'Dot plot of seven source forecasts for one day, in inches: NWS 9.4, HRRR 11.0, NBM 12.6, ECMWF 15.6, GEM 15.8, ICON 21.2, GFS 23.5. NWS (lowest) and GFS (highest) are left out. The weighted blend of the rest is ' + BLEND.value.toFixed(1) + ' inches.');
+    var x = lin(5, 25, x0, x1), R = { 1: 5, 2: 6.5, 3: 8 };
+    rows.forEach(function (p, i) {
+      var cy = top + i * rh + rh / 2, wt = WEIGHTS[p.name], r = R[wt], out = p === BLEND.lo || p === BLEND.hi, px = x(p.v);
+      s('line', { x1: 0, x2: w, y1: cy + rh / 2, y2: cy + rh / 2, class: 'grid' }, svg);
+      var t = s('text', { x: 0, y: cy + 4.5, class: 'st' }, svg, p.name);
+      s('tspan', { dx: 6, style: 'font-weight:500;fill:' + COL.mute }, t, '×' + wt);
+      s('circle', out ? { cx: px, cy: cy, r: r - 1, fill: COL.night, stroke: COL.dim, 'stroke-width': 2 } : { cx: px, cy: cy, r: r, fill: COL.powder, stroke: COL.night, 'stroke-width': 2 }, svg);
+      var right = out ? p === BLEND.lo : p.v >= BLEND.value;
+      var v = s('text', { x: right ? px + r + 7 : px - r - 7, y: cy + 4.5, 'text-anchor': right ? 'start' : 'end', class: 'st' }, svg);
+      if (out && !right) s('tspan', { style: 'font-weight:500;fill:' + COL.mute }, v, 'highest, left out  ');
+      s('tspan', {}, v, p.v.toFixed(1));
+      if (out && right) s('tspan', { style: 'font-weight:500;fill:' + COL.mute }, v, '  lowest, left out');
+      var hit = s('circle', { cx: px, cy: cy, r: 14, fill: 'none', 'pointer-events': 'all' }, svg);
+      hover(hit, function () { return [[p.v.toFixed(1) + ' in', p.name], ['Weight ' + wt, out ? 'but left out of the average' : 'in the average']]; });
+    });
+    s('text', { x: 0, y: yBlend + 5, class: 'st' }, svg, 'NFOPD blend');
+    s('circle', { cx: x(BLEND.value), cy: yBlend, r: 8, fill: COL.blaze, stroke: COL.night, 'stroke-width': 2 }, svg);
+    s('text', { x: x(BLEND.value) + 16, y: yBlend + 9, class: 'num' }, svg, BLEND.value.toFixed(1) + ' in');
+    s('line', { x1: 0, x2: w, y1: yBlend + 22, y2: yBlend + 22, class: 'grid' }, svg);
+    s('text', { x: 0, y: yRange + 4.5, class: 'st' }, svg, 'Model range');
+    s('path', { d: 'M' + x(BLEND.min) + ',' + (yRange - 5) + 'v10M' + x(BLEND.max) + ',' + (yRange - 5) + 'v10M' + x(BLEND.min) + ',' + yRange + 'H' + x(BLEND.max), fill: 'none', stroke: COL.mute, 'stroke-width': 2 }, svg);
+    s('text', { x: (x(BLEND.min) + x(BLEND.max)) / 2, y: yRange - 9, 'text-anchor': 'middle' }, svg, BLEND.min.toFixed(1) + ' to ' + BLEND.max.toFixed(1) + ' in');
+    xAxis(svg, x, [5, 10, 15, 20, 25], yb, x0, x1, 'Forecast snow for the day (inches)');
+  });
+  $('blend-math').textContent = '(' + BLEND.kept.map(function (p) { return p.v.toFixed(1) + '×' + WEIGHTS[p.name]; }).join(' + ') + ') ÷ ' + BLEND.wsum + ' = ' + BLEND.value.toFixed(1) + ' in';
+
+  /* ---- 6. Ensemble: one dot per member ---- */
+  chart('c-ens', 640, function (host, w) {
+    var x0 = 14, x1 = w - 14, xmax = Math.max(24, Math.ceil(ENS.tot[ENS.n - 1] / 6) * 6), slot = (x1 - x0) / xmax;
+    var r = Math.max(3.5, Math.min(6, (slot - 2) / 2)), step = 2 * r + 2, bins = [], maxc = 0;
+    for (var i = 0; i < xmax; i++) bins.push([]);
+    ENS.tot.forEach(function (v) { bins[Math.min(xmax - 1, Math.floor(v))].push(v); });
+    bins.forEach(function (b) { maxc = Math.max(maxc, b.length); });
+    var top = 62, yb = top + maxc * step + 6, H = yb + 46;
+    var svg = mk(host, w, H, 'Dot histogram of 82 illustrative ensemble member totals in 1-inch bins. 10th percentile ' + ENS.p10.toFixed(1) + ' inches, median ' + ENS.p50.toFixed(1) + ', 90th percentile ' + ENS.p90.toFixed(1) + '. ' + ENS.inCount + ' members are within 40% of the median.');
+    var x = lin(0, xmax, x0, x1);
+    s('rect', { x: x(ENS.p50 - ENS.tol), y: top - 8, width: x(ENS.p50 + ENS.tol) - x(ENS.p50 - ENS.tol), height: yb - top + 8, fill: COL.powder, 'fill-opacity': 0.12 }, svg);
+    var hl = s('rect', { x: x0, y: top - 8, width: slot, height: yb - top + 8, fill: COL.snow, 'fill-opacity': 0.08, visibility: 'hidden' }, svg);
+    s('line', { x1: x(ENS.p50), x2: x(ENS.p50), y1: 26, y2: yb, stroke: COL.snow, 'stroke-width': 1.5 }, svg);
+    bins.forEach(function (b, bi) {
+      b.forEach(function (v, j) { s('circle', { cx: x(bi + 0.5), cy: yb - step / 2 - j * step, r: r, fill: ENS.inBand(v) ? COL.powder : COL.dim, stroke: COL.night, 'stroke-width': 1 }, svg); });
+    });
+    s('text', { x: x(ENS.p50), y: 16, 'text-anchor': 'middle', class: 'st' }, svg, 'Median ' + ENS.p50.toFixed(1) + ' in');
+    var by = 40;
+    s('path', { d: 'M' + x(ENS.p10) + ',' + (by - 5) + 'v10M' + x(ENS.p90) + ',' + (by - 5) + 'v10M' + x(ENS.p10) + ',' + by + 'H' + x(ENS.p90), fill: 'none', stroke: COL.mute, 'stroke-width': 2 }, svg);
+    s('text', { x: x(ENS.p10) - 7, y: by + 4.5, 'text-anchor': 'end' }, svg, '10th: ' + ENS.p10.toFixed(1));
+    s('text', { x: x(ENS.p90) + 7, y: by + 4.5 }, svg, '90th: ' + ENS.p90.toFixed(1) + ' in');
+    var ticks = []; for (var t = 0; t <= xmax; t += 6) ticks.push(t);
+    xAxis(svg, x, ticks, yb, x0, x1, 'One member’s 5-day snow total (inches)');
+    track(svg, w, x0, x1, yb, function (px, e) {
+      var bi = Math.max(0, Math.min(xmax - 1, Math.floor((px - x0) / slot))), c = bins[bi].length;
+      hl.setAttribute('x', x(bi)); hl.setAttribute('visibility', 'visible');
+      showTip(e, [[c + (c === 1 ? ' member' : ' members'), 'at ' + bi + ' to ' + (bi + 1) + ' in']]);
+    }, function () { hl.setAttribute('visibility', 'hidden'); });
+  });
+  (function () {
+    var box = $('ens-stats');
+    [['Likely range', ENS.p10.toFixed(1) + '–' + ENS.p90.toFixed(1) + ' in'], ['Chance of 6 in or more', ENS.chance[6] + '%'], ['Chance of 12 in or more', ENS.chance[12] + '%'], ['Chance of 24 in or more', ENS.chance[24] + '%'], ['Confidence', ENS.score + ' · ' + ENS.label]].forEach(function (p) {
+      var d = h('div', null, box); h('span', p[0], d, 'k'); h('span', p[1], d, 'n');
+    });
+    $('ens-cap').textContent = 'In this made-up set, ' + ENS.inCount + ' of ' + ENS.n + ' members fall inside the shaded band around the median, so the confidence score is ' + ENS.score + ' (' + ENS.label + ').';
+  })();
+
+  /* ---- 10. BS meter scale ---- */
+  chart('c-bs', 640, function (host, w) {
+    var x0 = 2, x1 = w - 2, max = 2.6, H = 138, ya = 34, bh = 20;
+    var svg = mk(host, w, H, 'BS meter scale by ratio of reported snow to gauge snow. Under 0.8: Under-reports. 0.8 to 1.3: Straight shooter. 1.3 to 1.8: Generous. Over 1.8: Sugar-coated. Example: 10 inches reported against 8 inches of gauge snow is 1.25, Straight shooter.');
+    var x = lin(0, max, x0, x1);
+    var bands = [
+      { a: 0, b: 0.8, name: 'Under-reports', range: 'under 0.8', c: COL.powder },
+      { a: 0.8, b: 1.3, name: 'Straight shooter', range: '0.8 to 1.3', c: COL.yes },
+      { a: 1.3, b: 1.8, name: 'Generous', range: '1.3 to 1.8', c: COL.lamp },
+      { a: 1.8, b: max, name: 'Sugar-coated', range: 'over 1.8', c: COL.no }
+    ];
+    bands.forEach(function (b) {
+      var bx = x(b.a) + 1, bw = x(b.b) - x(b.a) - 2, mid = bx + bw / 2;
+      var rect = s('rect', { x: bx, y: ya, width: bw, height: bh, rx: 4, fill: b.c }, svg);
+      var words = b.name.split(' ');
+      if (words.length > 1 && bw < 112) words.forEach(function (wd, i) { s('text', { x: mid, y: 94 + i * 15, 'text-anchor': 'middle', class: 'st' }, svg, wd); });
+      else s('text', { x: mid, y: 94, 'text-anchor': 'middle', class: 'st' }, svg, b.name);
+      if (b.a > 0) s('text', { x: x(b.a), y: 73, 'text-anchor': 'middle' }, svg, b.a.toFixed(1));
+      hover(rect, function () { return [[b.name, ''], ['Ratio ' + b.range, '']]; });
+    });
+    s('text', { x: x0, y: 73 }, svg, '0');
+    var ex = x(10 / 8);
+    s('text', { x: x0, y: 14 }, svg, 'Example: 10 in reported ÷ 8 in gauge snow = ' + (10 / 8).toFixed(2));
+    s('line', { x1: ex, x2: ex, y1: 21, y2: ya + bh + 4, stroke: COL.night, 'stroke-width': 6 }, svg);
+    s('line', { x1: ex, x2: ex, y1: 21, y2: ya + bh + 4, stroke: COL.snow, 'stroke-width': 2 }, svg);
+    s('text', { x: (x0 + x1) / 2, y: 132, 'text-anchor': 'middle' }, svg, 'Reported snow ÷ gauge snow');
+  });
+
+  /* ---- Draw, and redraw when the width changes ---- */
+  var lastW = 0, raf = 0;
+  function renderAll() { hideTip(); charts.forEach(function (f) { f(); }); }
+  window.addEventListener('resize', function () {
+    var cw = document.documentElement.clientWidth; if (cw === lastW) return; lastW = cw;
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(renderAll);
+  });
+  lastW = document.documentElement.clientWidth;
+  renderAll();
+})();
+</script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script><script defer src="/_vercel/insights/script.js"></script><script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script><script defer src="/_vercel/speed-insights/script.js"></script></body></html>
