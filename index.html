@@ -221,6 +221,15 @@ select.plain { appearance: none; background: var(--night-2) url("data:image/svg+
 .tl-now::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: repeating-linear-gradient(90deg, var(--blaze) 0 14px, transparent 14px 18px); }
 .tl-now b { font: 800 68px/.92 var(--f-sign); font-variant-numeric: tabular-nums; }
 .tl-now .src { font-size: 12px; line-height: 1.35; color: var(--mute); max-width: 16ch; }
+/* BS meter: the resort's reported snow against the nearest gauge. */
+.bs { display: grid; gap: 14px; max-width: 76ch; }
+.bs-verdict { font: 800 clamp(26px, 4vw, 34px)/1.05 var(--f-sign); margin: 0; }
+.bs-verdict small { display: block; margin-top: 4px; font: 400 15px/1.45 var(--f-text); color: var(--snow-edge); }
+.bs-scale { position: relative; display: grid; grid-template-columns: 15% 25% 25% 35%; margin-top: 12px; }
+.bs-scale span { padding-top: 20px; font: 600 12px/1.2 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bs-scale span::before { content: ""; position: absolute; inset: 0 1px auto 0; height: 12px; border-radius: 2px; background: var(--c); }
+.bs-scale span.on { color: var(--snow); }
+.bs-mark { position: absolute; top: -7px; left: var(--x); width: 4px; height: 26px; margin-left: -2px; border-radius: 2px; background: var(--snow); box-shadow: 0 0 0 2px var(--night); }
 /* Pinpoint map: the forecast point on terrain; a tap moves it. */
 .pinmap:focus-visible::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; z-index: 1000; pointer-events: none; background: linear-gradient(var(--blaze), var(--blaze)) center / 2px 100% no-repeat, linear-gradient(var(--blaze), var(--blaze)) center / 100% 2px no-repeat; }
 .pin-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -2634,6 +2643,7 @@ async function tabEccc(el, r) {
 async function tabReport(el, r) {
   const a = reportFor(r);
   el.innerHTML = `${slot('r-report', a?.agg ? 'Resort-submitted report' : 'From the resort', a ? `From <a href="${esc(httpsUrl(a.page) || r.site)}" target="_blank" rel="noopener">${esc(host(a.page || r.site))} ${ICON.out}</a>` : '')}
+    ${a && hasSnotel(r) ? slot('r-bs', 'BS meter', `Reported snow against the nearest gauge · <a href="https://nfopd.vercel.app/methods#bs-meter" target="_blank" rel="noopener">how it works</a>`) : ''}
     ${hasSnotel(r) ? slot('r-snotel', 'Nearest SNOTEL station', 'USDA NRCS, observed') : ''}
     ${slot('r-season', 'Season so far', 'Reanalysis via Open-Meteo' + (hasSnotel(r) ? ' · SNOTEL median' : ''))}`;
   getSeason(r).then(x => fill('r-season', seasonHtml(x)), e => fill('r-season', errBox('Season history', e)));
@@ -2652,6 +2662,10 @@ async function tabReport(el, r) {
     }
   }
   const s = sn.value;
+  if (a && hasSnotel(r)) {
+    const draw = hm => fill('r-bs', bsHtml(r, rep.value, s, hm));
+    draw(null); getHourlyModel(r).then(draw, () => {});
+  }
   fill('r-snotel', s ? `<div class="report-grid"><div class="kv"><span class="k">Snow depth</span><span class="v">${fmtIn(s.depth)}"</span></div><div class="kv"><span class="k">24h depth gain</span><span class="v">${fmtIn(s.new24)}"</span></div><div class="kv"><span class="k">Snow water</span><span class="v">${fmtIn(s.swe)}"</span></div><div class="kv"><span class="k">24h water gain</span><span class="v">${fmtIn(s.swe24)}"</span></div></div>
     <p class="mute small" style="margin:0">${esc(s.station.name)} (${esc(s.station.triplet)}), ${fmtFt(s.station.elev)} ft, ${s.station.km} km from the resort · reading ${esc(s.time)} local standard time · <a href="https://wcc.sc.egov.usda.gov/nwcc/site?sitenum=${esc(s.station.triplet.split(':')[0])}" target="_blank" rel="noopener">station page</a></p>
     ${s.daily.length ? `<div class="table-scroll"><table><thead><tr><th>Date</th>${s.daily.slice(-10).map(d => `<th>${esc(dayLabel(d.d).md)}</th>`).join('')}</tr></thead><tbody><tr><td>Depth</td>${s.daily.slice(-10).map(d => `<td>${fmtIn(d.depth)}"</td>`).join('')}</tr><tr><td>Water</td>${s.daily.slice(-10).map(d => `<td>${fmtIn(d.swe)}"</td>`).join('')}</tr></tbody></table></div>` : ''}`
@@ -2695,6 +2709,45 @@ function seasonHtml(x) {
     ${x.med ? kv('Snowpack vs normal', x.med.pct != null ? x.med.pct + '%' : '–') : ''}</div>
     ${x.months.length ? `<div class="table-scroll"><table><thead><tr><th>Month</th>${x.months.map(m => `<th>${mon(m.m)}</th>`).join('')}</tr></thead><tbody><tr><td>Snowfall</td>${x.months.map(m => `<td>${fmtIn(m.v)}"<span class="meter" style="--v:${Math.round(m.v / top * 100)}%;--c:var(--ice)"><i></i></span></td>`).join('')}</tr></tbody></table></div>` : ''}
     <p class="mute small" style="margin:0">Since ${esc(dayLabel(x.start).md)}, upper mountain. Modeled from the ERA5 and ECMWF reanalysis, hour by hour at this elevation, so treat it as an estimate, not a measurement.${x.med ? ` Snowpack: ${esc(x.med.station)} SNOTEL holds ${fmtIn(x.med.swe)}" of water against a 30-year median of ${fmtIn(x.med.median)}" for this date.` : ''}</p>`;
+}
+
+// The BS meter. Resorts measure their own snow, on their own stake, and a generous count sells tickets. This holds the
+// resort's reported new snow up against what the nearest SNOTEL gauge measured over the same window.
+// A gauge reads settled snow (roughly 10–25% under a snow-board count) at a different spot, so up to 1.3× counts as honest.
+// Depth alone undercounts long storms (the pack settles while it snows), so the gauge's water gain × 10 is used when it is larger.
+// Until three snow days are logged the verdict is an "early read", and a gauge more than 8 km away is called out.
+const BS_BANDS = [[0.8, 'Under-reports', 'var(--ice)'], [1.3, 'Straight shooter', 'var(--snow-edge)'], [1.8, 'Generous', 'var(--lamp)'], [Infinity, 'Sugar-coated', 'var(--blaze)']];
+function bsRead(r, rep, sn) {
+  if (!rep || !sn) return null;
+  const rises = key => { const a = (sn.daily || []).map(d => d[key]).filter(v => v != null); return n => a.length > n ? sum(a.slice(-n - 1).map((v, i, arr) => i ? Math.max(0, v - arr[i - 1]) : 0)) : null; };
+  const depth = rises('depth'), water = rises('swe');
+  const best = (d, w) => d == null && w == null ? null : Math.max(d ?? 0, (w ?? 0) * 10);
+  const windows = [['Last 24 hours', rep.new24, sn.new24, sn.swe24 != null ? Math.max(0, sn.swe24) : null, 'p24'], ['Last 48 hours', rep.new48, depth(2), water(2), null], ['Last 7 days', rep.new7d, depth(7), water(7), 'p7d']]
+    .map(([label, said, d, w, key]) => ({ label, said, depth: d, water: w, got: best(d, w), key })).filter(x => x.said != null && x.got != null).map(x => ({ ...x, counts: Math.max(x.said, x.got) >= 2 }));
+  // One reading a day is kept on this device, so the verdict steadies as the season goes on.
+  const today = dayKey(Date.now()), log = (store.get('bs:' + r.id, []) || []).filter(x => x.d !== today);
+  const day = windows.find(x => x.key === 'p24');
+  if (day) log.push({ d: today, r: day.said, m: round(day.got, 1) });
+  store.set('bs:' + r.id, log.slice(-120));
+  const snowDays = log.filter(x => Math.max(x.r, x.m) >= 2);
+  let ratio = null, basis = null, early = true;
+  if (snowDays.length >= 3) { ratio = sum(snowDays.map(x => x.r)) / Math.max(1, sum(snowDays.map(x => x.m))); basis = `${snowDays.length} snow days logged on this device since ${dayLabel(snowDays[0].d).md}`; early = false; }
+  else { const w = [...windows].reverse().find(x => x.counts); if (w) { ratio = w.said / Math.max(1, w.got); basis = `the ${w.label.toLowerCase()} only`; } }
+  return { windows, ratio, basis, early, far: sn.station.km > 8, band: ratio == null ? null : BS_BANDS.findIndex(b => ratio < b[0]) };
+}
+function bsHtml(r, rep, sn, hm) {
+  const b = bsRead(r, rep, sn);
+  if (!b) return `<p class="empty">The BS meter needs both a resort report and a SNOTEL gauge within 45 km. ${!rep ? 'The report did not load.' : 'No gauge reading right now.'}</p>`;
+  const x = b.ratio == null ? null : Math.round((Math.max(0.5, Math.min(2.5, b.ratio)) - 0.5) / 2 * 100);
+  const verdict = b.band == null ? 'Not enough new snow to judge' : (b.early ? 'Early read: ' : '') + BS_BANDS[b.band][1];
+  const line = b.ratio == null ? `Neither ${esc(r.name)} nor the gauge has 2" or more in any window yet. Check back after a storm.`
+    : `${esc(r.name)} reports ${b.ratio >= 1.05 ? `${Math.round((b.ratio - 1) * 100)}% more` : b.ratio <= 0.95 ? `${Math.round((1 - b.ratio) * 100)}% less` : 'about the same'} snow ${b.ratio >= 1.05 || b.ratio <= 0.95 ? 'than' : 'as'} the gauge measured, going by ${esc(b.basis)}.${b.early ? ' One window is a small sample; this firms up after three logged snow days.' : ''}${b.far ? ` The gauge is ${sn.station.km} km away, so treat this as a rough read.` : ''}`;
+  return `<div class="bs">
+    <p class="bs-verdict">${esc(verdict)}<small>${line}</small></p>
+    <div class="bs-scale" role="img" aria-label="${esc(verdict)}${b.ratio != null ? `: reported snow is ${b.ratio.toFixed(1)} times the measured snow` : ''}">${BS_BANDS.map((band, i) => `<span class="${i === b.band ? 'on' : ''}" style="--c:${band[2]}">${band[1]}</span>`).join('')}${x != null ? `<i class="bs-mark" style="--x:${x}%"></i>` : ''}</div>
+    ${b.windows.length ? `<div class="table-scroll"><table><thead><tr><th>Window</th><th>Resort says</th><th>Gauge depth gain</th><th>Gauge water gain</th><th>Model estimate</th></tr></thead><tbody>${b.windows.map(w => `<tr><td>${w.label}</td><td>${fmtIn(w.said)}"</td><td>${w.depth != null ? fmtIn(w.depth) + '"' : '–'}</td><td>${w.water != null ? fmtIn(w.water) + '"' : '–'}</td><td>${hm && w.key && hm.summit[w.key] != null ? fmtIn(hm.summit[w.key]) + '"' : '–'}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <p class="mute small" style="margin:0">Gauge: ${esc(sn.station.name)} SNOTEL, ${fmtFt(sn.station.elev)} ft, ${sn.station.km} km away. The gauge's snow is taken as the larger of its depth gain and ten times its water gain, because the pack settles while it snows. It still reads lower than a fresh count on the upper mountain, so up to 30% more than the gauge is scored as straight.${rep.via ? ` Report via ${esc(rep.via)}.` : ''}</p>
+  </div>`;
 }
 
 async function tabCams(el, r) {
