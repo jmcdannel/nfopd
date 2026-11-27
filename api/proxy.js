@@ -19,7 +19,7 @@ const ALLOW = [
   'kickinghorseresort.com', 'skifernie.com', 'skikimberley.com', 'skinakiska.com', 'skiwhitewater.com', 'whitewatermountainresort.com', 'skisilverstar.com',
   'skibanff.com', 'skimarmot.com', 'banffnorquay.com', 'mtbaker.us', 'pub-7925c8bdc8ac4f9ab378e230f5700977.r2.dev',
   // independent forecasters' feeds (NFOPD shows short excerpts and links back)
-  'rainviewer.com', 'blogspot.com', 'snowalarm.com', 'weatherwest.com', 'powderchasers.com', 'youtube.com', 'mountainweather.com',
+  'skaping.com', 'webcam.io', 'rainviewer.com', 'blogspot.com', 'snowalarm.com', 'weatherwest.com', 'powderchasers.com', 'youtube.com', 'mountainweather.com',
 ];
 // How long Vercel's edge cache keeps each kind of response (seconds). Sources update on very different clocks.
 const TTL = [
