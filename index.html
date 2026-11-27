@@ -2563,22 +2563,28 @@ function useSnapshot() {
 
 // Snapshot export (used to embed a saved copy into the published page).
 window.NFOPD = {
+  // The snapshot holds the whole West's rankings, Dailies and forecaster posts, and full detail for the resorts in `ids`.
   async prefetch(ids) {
-    await getFinder('Idaho');
+    for (const g of WEST) {
+      await getFinder(g).catch(() => {});
+      await getDaily(g).catch(() => {});
+      await Promise.allSettled((EXPERTS[g] || []).map(getExpert));
+    }
     for (const id of ids) {
       const r = RBYID[id];
-      const pts = await getPoints(r).catch(() => null);
-      await Promise.allSettled([getModels(r), getGrid(r), getHourlyModel(r), getSnotel(r), getAvy(r), getReport(r), getAlerts(r), getNwsForecast(r), getObs(r), getEnsemble(r), pts && getAfd(pts.cwa)]);
+      const pts = await getPoints(r).catch(() => null), avy = await getAvy(r).catch(() => null);
+      await Promise.allSettled([getModels(r), getGrid(r), getHourlyModel(r), getSnotel(r), getReport(r), getAlerts(r), getNwsForecast(r), getObs(r), getEnsemble(r), pts && getAfd(pts.cwa), avy && getAvyWeather(avy)]);
       await getVerify(r).catch(() => {});
+      await getSeason(r).catch(() => {});
     }
     return [...MEM.keys()].length;
   },
-  async exportSnapshot({ thumbs = true } = {}) {
+  async exportSnapshot({ thumbs = true, ids = null } = {}) {
     const data = {};
     for (const [k, v] of MEM) if (!k.startsWith('snotel-stations')) data[k] = v.v;
     const out = { generated: new Date().toISOString(), data, thumbs: {} };
     if (thumbs && Net.mode === 'proxy') {
-      for (const list of Object.values(CAMS)) for (const c of list.cams) {
+      for (const [id, list] of Object.entries(CAMS)) for (const c of ids && !ids.includes(id) ? [] : list.cams) {
         try {
           const img = new Image(); img.src = await Net.image(c.resolve ? await c.resolve() : c.image); await img.decode();
           const w = 480, h = Math.round(img.naturalHeight / img.naturalWidth * w), cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -2590,7 +2596,7 @@ window.NFOPD = {
   },
   async saveSnapshot(ids = RESORTS.filter(r => r.region === 'Idaho').map(r => r.id)) {
     await this.prefetch(ids);
-    const body = await this.exportSnapshot();
+    const body = await this.exportSnapshot({ ids });
     const r = await fetch('/snapshot', { method: 'POST', body, headers: { 'X-NFOPD': '1', 'Content-Type': 'application/json' } });
     return `${r.status} ${await r.text()} · ${(body.length / 1e6).toFixed(2)} MB`;
   },
