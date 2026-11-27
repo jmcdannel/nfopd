@@ -10,10 +10,14 @@ The whole app is one file, `nfopd.html`.
 
 | How | What you get |
 | --- | --- |
-| **Vercel** (this repo deploys as-is) | Everything, live. `api/proxy.js` fetches from the forecast, observation, avalanche and resort hosts the app uses, and nothing else. |
+| **Vercel** (this repo deploys as-is) | Everything, live, and installable as an app from the browser (`manifest.webmanifest`, `sw.js`, `icons/`; `build.py` adds the tags to `index.html`). `api/proxy.js` fetches from the forecast, observation, avalanche and resort hosts the app uses, and nothing else. |
 | **Local server**: `python3 serve.py`, then open http://127.0.0.1:8765 | Everything, live, in any browser. Python 3 standard library only. |
 | **Claude desktop app** (open the published artifact in the Claude desktop app, click **Install as app**, then **Allow live data**) | Everything, live, fetched with `curl` on your Mac. Forecast history is kept in `~/Library/Application Support/NFOPD/history`. |
 | **Published artifact in a browser** | The saved snapshot only. |
+
+## Which ski areas
+
+Every operating downhill area in the western US and Canada. East of the Rockies only those with 1,000 ft or more of vertical (`EAST_MIN_VERT` in `nfopd.html`). About 950 larger areas outside North America are listed with model forecasts only.
 
 ## Data sources
 
