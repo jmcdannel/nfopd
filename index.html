@@ -146,22 +146,91 @@ select.plain { appearance: none; background: var(--night-2) url("data:image/svg+
 
 /* resort page */
 .rhead { display: grid; gap: 8px; }
-.home-hero { display: grid; gap: 14px; padding-block: 10px 6px; }
+.home-hero { position: relative; isolation: isolate; display: grid; gap: 14px; padding-block: 10px 6px; }
+.hero-text { position: relative; z-index: 1; display: grid; gap: 14px; }
+/* Hero illustration: one set of tracks down an untouched face, before dawn. */
+.hero-art { position: absolute; inset: 0 0 0 auto; width: min(52%, 560px); z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 38%); mask-image: linear-gradient(90deg, transparent 0, #000 38%); }
+.hero-art svg { display: block; width: 100%; height: 100%; }
+.hero-track { fill: none; stroke: var(--snow); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .9; stroke-dasharray: 1; stroke-dashoffset: 1; animation: nf-draw 3.4s cubic-bezier(.4, .1, .3, 1) calc(.5s - var(--skip, 0s)) forwards; }
+.hero-skier { fill: var(--blaze); offset-distance: 0%; opacity: 0; animation: nf-ski 3.4s cubic-bezier(.4, .1, .3, 1) calc(.5s - var(--skip, 0s)) forwards; }
+.hero-track.b, .hero-skier.b { animation-delay: calc(1s - var(--skip, 0s)); }
+.played .hero-track { animation: none; stroke-dashoffset: 0; }
+.played .hero-skier { animation: none; offset-distance: 100%; opacity: 0; }
+@supports not (offset-path: path("M0 0")) { .hero-skier { display: none; } }
+@keyframes nf-draw { to { stroke-dashoffset: 0; } }
+@keyframes nf-ski { 0% { offset-distance: 0%; opacity: 1; } 92% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
+.hero-snow { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.hero-snow i { position: absolute; top: -8px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; background: var(--snow); opacity: 0; animation: nf-fall var(--d) linear var(--dl) infinite; }
+.hero-snow.off i { animation-play-state: paused; }
+.hero-snow { transition: opacity 1.2s ease-out; }
+.hero-snow.done { opacity: 0; }
+@keyframes nf-fall { 0% { transform: translate3d(0, 0, 0); opacity: 0; } 12% { opacity: var(--o); } 85% { opacity: var(--o); } 100% { transform: translate3d(var(--dx), var(--fall, 360px), 0); opacity: 0; } }
+@media (max-width: 820px) { .hero-art { inset: 0 0 auto auto; width: 70%; height: var(--art-h, 58%); opacity: .7; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 60%); mask-image: linear-gradient(90deg, transparent 0, #000 60%); } }
+@media (prefers-reduced-motion: reduce) { .hero-track { animation: none; stroke-dashoffset: 0; } .hero-skier { display: none; } .hero-snow { display: none; } }
 .hero-title { font: italic 800 clamp(46px, 9.5vw, 112px)/0.86 var(--f-sign); letter-spacing: 0.01em; text-transform: uppercase; margin: 0; }
 .hero-title span { display: block; }
 .hero-title em { font-style: inherit; color: #6FB4FF; background: linear-gradient(180deg, var(--snow) 0 20%, #6FB4FF 20% 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .hero-title::after { content: ""; display: block; width: 132px; height: 10px; margin-top: 18px; background: repeating-linear-gradient(90deg, var(--blaze) 0 22px, transparent 22px 28px); }
-.hero-sub { margin: 0; max-width: 60ch; font-size: 18px; color: var(--mute); }
+.hero-sub { margin: 0; max-width: 60ch; font-size: 18px; color: var(--snow-edge); }
 .home-h { font-size: 26px; margin-top: 6px; }
-.favstrip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-.favstrip::-webkit-scrollbar { display: none; }
-.fav-card { flex: 0 0 auto; min-width: 150px; display: grid; gap: 2px; padding: 10px 14px 12px; border: 1px solid var(--rule-2); border-radius: 10px; background: var(--night-2); color: var(--snow); text-decoration: none; }
+.favs { display: grid; gap: 12px; min-width: 0; }
+.favstrip > * { min-width: 0; }
+.fav-src { font-size: 12px; line-height: 1.2; color: var(--mute); white-space: nowrap; }
+@media (max-width: 480px) { .fav-card { padding: 12px 12px 14px; } .fav-row { gap: 10px; } .fav-now { padding: 11px 10px 8px; } .fav-now b { font-size: 30px; } .fav-b b { font-size: 22px; } }
+.favstrip { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.fav-card { display: grid; gap: 12px; padding: 14px 16px 16px; border: 1px solid var(--rule-2); border-radius: 10px; background: var(--night-2); color: var(--snow); text-decoration: none; transition: border-color .15s; }
 .fav-card:hover { border-color: var(--mute); }
-.fav-n { font-weight: 600; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.fav-v { font: 800 30px/1 var(--f-sign); }
-.fav-k { font-size: 12px; color: var(--mute); }
+.fav-n { font: 700 19px/1.2 var(--f-sign); letter-spacing: .02em; display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.fav-n .fav { flex: none; align-self: center; color: var(--blaze); width: 12px; height: 12px; }
+.fav-st { margin-left: auto; font: 400 13px/1.2 inherit; letter-spacing: 0; color: var(--mute); white-space: nowrap; }
+.fav-wait { color: var(--mute); font-size: 14px; }
+.fav-row { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.fav-now { display: grid; gap: 4px; padding: 12px 14px 9px; background: var(--night-3); border-radius: 8px; background-image: repeating-linear-gradient(90deg, var(--blaze) 0 10px, transparent 10px 13px); background-size: 100% 4px; background-repeat: no-repeat; }
+.fav-now b { font: 800 36px/1 var(--f-sign); font-variant-numeric: tabular-nums; }
+.fav-b { display: grid; gap: 3px; min-width: 0; }
+.fav-b .tl-k { letter-spacing: .05em; }
+.fav-b b { font: 800 26px/1 var(--f-sign); font-variant-numeric: tabular-nums; }
+.fav-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 22px; align-items: end; border-bottom: 1px solid var(--rule-2); margin-top: 3px; }
+.fav-bars i { display: block; height: var(--h); background: var(--snow); border-radius: 1px 1px 0 0; }
+/* Snow timeline: 15 days back, the last 24 hours, 15 days ahead, in 5-day blocks. */
+.tl-scroll { position: relative; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent; }
+.tl-hint { display: none; color: var(--mute); }
+@media (max-width: 1100px) { .tl-hint { display: inline; } }
+.tl-scroll:focus-visible { outline: 2px solid var(--blaze); outline-offset: 4px; }
+.tl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 150px repeat(3, minmax(0, 1fr)); gap: 0 16px; min-width: 980px; align-items: end; }
+.tl-g { display: grid; gap: 10px; min-width: 0; }
+.tl-g .tl-h { display: grid; gap: 3px; padding-bottom: 8px; border-bottom: 1px solid var(--rule-2); min-width: 0; }
+.tl-k { font: 600 13px/1.2 var(--f-sign); letter-spacing: .1em; text-transform: uppercase; color: var(--lamp); white-space: nowrap; }
+.tl-t { font: 800 30px/1 var(--f-sign); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tl-t small { font: 600 13px/1 var(--f-sign); letter-spacing: .03em; color: var(--mute); margin-left: 6px; }
+.tl-g.past .tl-t { color: var(--snow-edge); }
+.tl-days { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.tl-days li { display: grid; grid-template-rows: 18px 60px auto; justify-items: center; gap: 4px; min-width: 0; }
+.tl-v { font: 700 14px/18px var(--f-sign); font-variant-numeric: tabular-nums; }
+.tl-v.zero { color: var(--dim); font-weight: 600; }
+.tl-v.big { color: var(--blaze); font-weight: 800; }
+.tl-bar { position: relative; width: 100%; max-width: 28px; height: 60px; border-bottom: 2px solid var(--rule-2); }
+.tl-bar::after { content: ""; position: absolute; inset: auto 0 0 0; height: var(--h, 0%); background: var(--snow); border-radius: 2px 2px 0 0; }
+.tl-g.past .tl-bar::after { opacity: .38; }
+.tl-bar i { position: absolute; right: -4px; width: 2px; bottom: var(--lo); height: calc(var(--hi) - var(--lo)); background: var(--lamp); border-radius: 1px; }
+.tl-d { display: grid; justify-items: center; gap: 1px; padding-bottom: 3px; font: 600 12px/1.15 var(--f-sign); letter-spacing: .04em; text-transform: uppercase; color: var(--mute); }
+.tl-d b { font-weight: 600; color: var(--snow-edge); }
+.tl-days li.wk .tl-d b { font-weight: 800; color: var(--snow); }
+.tl-days li.today .tl-d { box-shadow: 0 2px 0 var(--blaze); }
+.tl-now { position: relative; align-self: stretch; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 18px 10px 12px; background: var(--night-3); border-radius: 10px; text-align: center; overflow: hidden; }
+.tl-now::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: repeating-linear-gradient(90deg, var(--blaze) 0 14px, transparent 14px 18px); }
+.tl-now b { font: 800 68px/.92 var(--f-sign); font-variant-numeric: tabular-nums; }
+.tl-now .src { font-size: 12px; line-height: 1.35; color: var(--mute); max-width: 16ch; }
+/* Pinpoint map: the forecast point on terrain; a tap moves it. */
+.pinmap:focus-visible::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; z-index: 1000; pointer-events: none; background: linear-gradient(var(--blaze), var(--blaze)) center / 2px 100% no-repeat, linear-gradient(var(--blaze), var(--blaze)) center / 100% 2px no-repeat; }
+.pin-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+@media (pointer: coarse) { .leaflet-bar a { width: 44px; height: 44px; line-height: 42px; } }
+.pinmap { height: clamp(240px, 38vh, 360px); border-radius: 12px; border: 1px solid var(--rule); background: #0E1A2A; position: relative; z-index: 0; isolation: isolate; cursor: crosshair; }
 .mapbox { display: grid; gap: 10px; }
+.mapbox, .map-tools { min-width: 0; }
 .map-tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.map-tools .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.map-tools .seg button { white-space: nowrap; flex: none; }
 .map-tools .seg button { font-size: 13px; }
 .spot-pick { font-size: 14px; color: var(--mute); min-height: 22px; }
 .spot-pick a { font: 700 15px/1.2 var(--f-sign); color: var(--snow); }
@@ -429,6 +498,10 @@ const CURATED = [
 ].map(([id, name, state, region, lat, lon, base, summit, site]) => ({ id, name, state, region, lat, lon, base, summit, site, country: 'US', curated: true }));
 // Every operating US and Canadian downhill area from OpenSkiMap, plus the larger ski areas worldwide; the hand-checked resorts above take precedence nearby.
 const EAST_MIN_VERT = 1000;
+// Upper-mountain forecast points: the spot within about 5 km of each resort whose ground elevation is nearest
+// 85% of the way up the hill (from the Copernicus 90 m terrain model via Open-Meteo). [lat, lon, ft].
+// A base-village point puts NWS's 2.5 km grid cell and the models on the valley floor, where storms are rain.
+const FXPT = {"tamarack":[44.6828,-116.1573,7195],"brundage":[45.015,-116.1267,7493],"sun-valley":[43.6514,-114.4065,8560],"schweitzer":[48.3777,-116.6381,6109],"silver-mountain":[47.574,-116.133,4206],"lost-trail":[45.703,-113.9643,7736],"pomerelle":[42.308,-113.6078,8501],"soldier-mountain":[43.4841,-114.8512,6791],"magic-mountain":[42.1797,-114.2853,7060],"pebble-creek":[42.7884,-112.1454,8465],"grand-targhee":[43.7803,-110.9303,9177],"jackson-hole":[43.5875,-110.8831,9915],"big-sky":[45.274,-111.4579,10479],"whitefish":[48.502,-114.3349,6430],"alta":[40.5684,-111.6254,10495],"snowbird":[40.591,-111.6833,10371],"brighton":[40.588,-111.557,10226],"steamboat":[40.4472,-106.7519,10131],"wolf-creek":[37.4647,-106.8056,11752],"mt-baker":[48.847,-121.665,5030],"palisades":[39.1868,-120.2741,8396],"taos":[36.576,-105.4545,11667],"alpental":[47.4411,-121.4506,5016],"hickory-ski-center":[43.4613,-73.8114,1483],"saddleback-mountain":[44.9323,-70.5075,3950],"aspen-snowmass":[39.1664,-106.9631,11909],"aspen-highlands":[39.1521,-106.8226,11037],"sierra-at-tahoe-ski-resort":[38.7962,-120.0662,8547],"massanutten-resort":[38.3985,-78.773,2575],"blacktail-mountain-ski-area":[48.0129,-114.3741,6342],"white-pine-resort":[42.9725,-109.7379,9232],"troll-resort":[53.087,-121.9269,4770],"copper-mountain":[39.4677,-106.1612,12096],"murray-ridge":[54.5353,-124.2018,4390],"cranmore-mountain-resort":[44.057,-71.0852,1621],"wildcat-mountain":[44.2472,-71.2323,3724],"beaver-creek-resort-arrowhead-mountain":[39.5798,-106.5435,10659],"sugar-mountain-resort":[36.1273,-81.8796,4731],"sunrise-park-resort":[33.9464,-109.5557,10522],"snobowl-bike-and-ski-area":[40.9169,-115.8582,6926],"birch-hill-ski-and-snowboard-area":[64.8616,-147.6502,955],"kimberley-alpine-resort":[49.6782,-116.0293,5764],"clearwater-ski-hill":[51.6214,-120.0185,2287],"dodge-ridge-ski-area":[38.181,-119.9261,7805],"grouse-mountain":[49.3893,-123.084,3983],"stowe-mountain-resort":[44.5497,-72.8042,3074],"bolton-valley-resort":[44.4059,-72.8395,2717],"montana-snowbowl":[47.0429,-113.9914,7129],"mountain-creek":[41.1784,-74.5035,1312],"whistler-blackcomb":[50.0607,-122.9471,6453],"loveland-basin-ski-area":[39.6783,-105.9237,12470],"june-mountain":[37.755,-119.0619,9629],"snowshoe-mountain":[38.4146,-80.0001,4524],"phoenix-mountain":[49.0956,-118.5867,4741],"powder-king-mountain-resort":[55.3694,-122.646,4820],"breckenridge-ski-resort":[39.4654,-106.1044,12546],"eaglecrest-ski-area":[58.2673,-134.53,2077],"mt-baldy":[34.2836,-117.612,8192],"arctic-valley-ski-area":[61.26,-149.5215,3773],"stratton-mountain-resort":[43.0915,-72.921,3753],"aspen-mountain":[39.1553,-106.8184,11007],"fairmont-hot-springs":[50.326,-115.8114,4541],"diamond-peak":[39.2542,-119.9012,8383],"angel-fire-resort":[36.3794,-105.2344,10387],"mont-edouard":[48.1498,-70.2885,1837],"salmo-ski-area":[49.181,-117.3195,3284],"hudson-bay-mountain":[54.7764,-127.2576,5108],"park-city-mountain-resort":[40.6443,-111.5751,9495],"black-mountain-of-maine":[44.5902,-70.6364,1772],"heavenly-mountain-resort":[38.9297,-119.8991,9511],"sleeping-giant-winter-sports-area":[44.5003,-109.9439,7234],"kelly-canyon-ski-resort":[43.6406,-111.5991,6549],"snowbasin-resort":[41.1918,-111.8759,9045],"cherry-peak-ski-area":[41.9123,-111.7534,6749],"mont-orford":[45.3152,-72.2409,2500],"echo-valley-ski-area":[47.9477,-120.0584,3028],"timberline-lodge-ski-area":[45.351,-121.7099,7523],"waterville-valley-resort":[43.9604,-71.5546,3737],"blue-mountain-resort":[40.8056,-75.5264,1243],"smugglers-notch-resort":[44.5533,-72.7561,3297],"mt-hood-skibowl":[45.2844,-121.7865,4744],"sugarbush-resort":[44.1524,-72.9252,3547],"attitash-mountain-resort":[44.0738,-71.2216,1995],"pico-mountain-resort":[43.6407,-72.8411,3428],"stevens-pass":[47.7449,-121.0734,5394],"sunday-river":[44.4647,-70.9059,2841],"snow-summit":[34.2186,-116.8917,8022],"mad-river-glen":[44.1875,-72.9245,3350],"mount-cain-alpine-park":[50.2127,-126.3308,5243],"castle-mountain-resort":[49.3189,-114.4419,6975],"marmot-basin":[52.787,-118.1047,7635],"pajarito-mountain":[35.8922,-106.4027,10197],"nakiska":[50.9484,-115.1854,6991],"kicking-horse-resort":[51.2749,-117.0682,7595],"sipapu-ski-and-summer-resort":[36.1496,-105.5647,9088],"mont-sutton":[45.0849,-72.5444,2582],"harper-mountain":[50.7222,-120.1169,4567],"loup-loup-ski-bowl":[48.4119,-119.9183,5141],"beartooth-basin-summer-ski-area":[44.9872,-109.4211,10840],"49-north-mountain-resort":[48.2823,-117.5766,5650],"northstar-at-tahoe-resort":[39.2488,-120.1371,7972],"kirkwood-mountain-resort":[38.6738,-120.0775,9055],"eagle-point":[38.3327,-112.3788,10213],"sundance-resort":[40.3798,-111.6015,7838],"mount-snow":[42.9601,-72.9206,3579],"cypress-mountain":[49.412,-123.1917,4485],"sky-tavern":[39.3239,-119.8769,8173],"bear-mountain":[34.2095,-116.8594,8445],"burke-mountain-resort":[44.5704,-71.9003,2940],"ski-santa-fe-santa-fe-q38555":[35.7913,-105.7772,12064],"tenney-mountain-resort":[43.7538,-71.7857,1962],"mission-ridge-wa":[47.2734,-120.4117,6447],"boreal-mountain-resort":[39.3313,-120.3354,7635],"banff-sunshine-village":[51.092,-115.7391,8114],"panorama-mountain-resort":[50.4228,-116.1882,7231],"mount-sunapee":[43.3139,-72.0757,2635],"teton-pass-ski-resort":[47.9207,-112.827,7129],"loon-mountain-resort":[44.0357,-71.6261,2782],"stratton-mountain-resort-vt":[43.0911,-72.9161,3606],"the-hermitage-club-at-haystack-mountain":[42.914,-72.9143,2999],"purden-ski-village":[53.8954,-121.8637,4386],"willamette-pass":[43.6125,-122.0157,6394],"bretton-woods-ski-area":[44.2409,-71.4686,2772],"lee-canyon":[36.3006,-115.6925,9298],"meadowlark-ski-area":[44.141,-107.2177,9131],"west-mountain-ski-resort":[43.2888,-73.7482,1273],"bluewood":[46.0761,-117.8667,5538],"china-peak-mountain-resort":[37.2166,-119.1572,8284],"windham-mountain-club":[42.293,-74.2431,2618],"sun-peaks-resort":[50.9065,-119.9167,6368],"eldora":[39.943,-105.5994,10085],"lake-louise-ski-area":[51.4646,-116.1325,7825],"winsport-canada-olympic-park":[51.0698,-114.2148,4062],"alyeska-resort":[60.9523,-149.0893,2444],"killington-resort":[43.6013,-72.8165,3783],"powderhorn":[39.0612,-108.1282,9567],"buttermilk":[39.1826,-106.8829,9711],"mt-norquay":[51.2112,-115.6197,6365],"ski-apache":[33.3926,-105.8117,11352],"sasquatch-mountain-resort":[49.3951,-121.9406,4150],"solitude-mountain-resort":[40.6027,-111.6041,9524],"magic-mountain-ski-area":[43.1958,-72.751,2776],"pleasant-mountain":[44.0426,-70.8155,1460],"deer-valley-resort":[40.605,-111.4832,8911],"sugarloaf":[45.029,-70.3158,3960],"station-touristique-stoneham":[47.0303,-71.4095,1778],"arizona-snowbowl":[35.3401,-111.6736,11168],"three-summits":[47.3444,-121.3307,3783],"mt-seymour":[49.3811,-122.9449,3930],"owl-s-head":[45.0617,-72.2954,2080],"red-river-ski-area":[36.6887,-105.4088,9852],"telluride-ski-area":[37.9112,-107.8214,11857],"discovery-ski-area":[46.2639,-113.2377,7726],"beaver-mountain":[41.9832,-111.5659,8468],"sandia-peak-ski-area":[35.1992,-106.4334,10157],"sunlight-mountain-resort":[39.3916,-107.3653,9695],"snow-king-mountain":[43.4557,-110.7587,7677],"red-lodge-mountain":[45.1797,-109.3533,9249],"jiminy-peak-resort":[42.5393,-73.2847,2175],"crested-butte-mountain-resort":[38.8888,-106.9436,11325],"silver-star-mountain-resort":[50.3789,-119.0609,5755],"purgatory-resort":[37.6233,-107.8483,10502],"monarch-mountain":[38.5022,-106.3427,11631],"gunstock-recreation-area":[43.5279,-71.3792,2106],"mt-shasta-ski-park":[41.3529,-122.2106,7287],"le-valinouet":[48.6388,-70.8959,2421],"brian-head-resort":[37.6911,-112.8217,10666],"red-mountain-resort":[49.1054,-117.8572,5988],"okemo-mountain":[43.4073,-72.7471,3209],"ferguson-ridge-ski-area":[45.2684,-117.1135,5633],"mountain-high":[34.3621,-117.6863,7769],"whiteface-mountain-ski-center":[44.3821,-73.8941,3848],"white-pass-ski-area":[46.6115,-121.4088,5925],"loveland-valley-ski-area":[39.6716,-105.8793,11260],"powder-mountain-ski-resort":[41.3739,-111.7503,8629],"jay-peak-resort":[44.9256,-72.5264,3524],"gore-mountain":[43.6721,-74.033,2963],"pin-rouge":[48.3275,-65.7045,1526],"shames-mountain":[54.5031,-128.9641,3612],"nordic-valley-resort-wolf-mountain":[41.3024,-111.8805,7005],"winter-park-resort":[39.8476,-105.7755,11394],"mt-baldy-family-ski-area":[49.1587,-119.2581,6854],"fernie-alpine-resort":[49.447,-115.1216,6385],"le-massif":[47.2799,-70.6079,2300],"mt-hood-meadows-ski-resort":[45.3476,-121.6736,6788],"belleayre-mountain-ski-center":[42.1209,-74.5115,3189],"revelstoke-mountain-resort":[50.9687,-118.1105,6404],"homewood-ski-area":[39.0674,-120.1734,7608],"big-white-ski-resort":[49.7441,-118.9316,7070],"bear-paw-ski-bowl":[48.1622,-109.6902,5630],"mont-grand-fonds-qc":[47.7692,-70.0783,2372],"yellowstone-club":[45.2285,-111.4597,9419],"bromley-mountain-ski-resort-bromley-mountain":[43.2311,-72.9382,3025],"wasatch-peaks-ranch":[41.1056,-111.856,9012],"sugar-bowl-resort":[39.2907,-120.3229,7972],"summit-west":[47.4105,-121.4218,3632],"showdown":[46.8358,-110.7231,7956],"cannon-mountain":[44.1585,-71.702,3770],"pass-powderkeg-ski":[49.5913,-114.4527,4964],"bridger-bowl":[45.8225,-110.9374,7769],"utah-olympic-park":[40.6983,-111.5783,8153]};
 const RESORTS = (() => {
   const out = [...CURATED], ids = new Set(out.map(r => r.id));
   let cat = []; try { cat = JSON.parse(document.getElementById('catalog').textContent); } catch { cat = []; }
@@ -444,6 +517,8 @@ const RESORTS = (() => {
     if (GROUPS.East.includes(region) && summit - base < EAST_MIN_VERT) continue;
     out.push({ id, name, state: st, region, lat, lon, base, summit, site: /^https?:\/\//.test(web) ? web.replace(/^http:/, 'https:') : '', country: cc });
   }
+  // Forecasts are read at an upper-mountain point, not at the base village the resort is listed under.
+  for (const r of out) { const p = FXPT[r.id]; r.flat = p ? p[0] : r.lat; r.flon = p ? p[1] : r.lon; r.fxFt = p ? p[2] : null; }
   return out;
 })();
 const RBYID = Object.fromEntries(RESORTS.map(r => [r.id, r]));
@@ -583,6 +658,17 @@ const REPORTS = {
     page: 'https://tamarackidaho.com/the-mountain/snow-report', url: 'https://tamarackidaho.com/the-mountain/snow-report',
     parse(html) {
       const doc = P.doc(html), text = doc.body.textContent.replace(/\s+/g, ' ');
+      // The page redesigned in November 2026: stats are label/value pairs and the patrol's note has its own section.
+      if (doc.querySelector('.sr-summary')) {
+        const stat = Object.fromEntries([...doc.querySelectorAll('.sr-stat')].map(li => [li.querySelector('.sr-stat__label')?.textContent.trim().toLowerCase(), P.num(li.querySelector('.sr-stat__value')?.textContent)]));
+        const block = [...doc.querySelectorAll('.sr-report__block')].find(b => /chair lifts/i.test(b.querySelector('.sr-report__subtitle')?.textContent || ''));
+        const rows = block ? [...block.querySelectorAll('tbody tr')] : [], liftsOpen = stat['lifts open'] ?? rows.filter(tr => /open/i.test(tr.querySelector('td')?.textContent || '') && !/clos/i.test(tr.querySelector('td')?.textContent || '')).length;
+        const note = [...doc.querySelectorAll('.sr-patrol__message p')].map(x => x.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        return { new24: stat['24 hrs summit'] ?? null, new48: stat['48 hrs summit'] ?? null, base: stat['mid base depth'] ?? null, summit: stat['summit base depth'] ?? null,
+          season: P.num(doc.querySelector('.sr-summary__total-value')?.textContent), liftsOpen, liftsTotal: rows.length || null, runsOpen: stat['runs open'] ?? null, runsTotal: null,
+          status: liftsOpen ? 'Open' : 'Closed', updated: (doc.querySelector('.sr-summary__updated')?.textContent || '').replace(/^\s*Last update:\s*/i, '').trim() || null,
+          conditions: stat['last storm total summit'] != null ? `Last storm ${stat['last storm total summit']}" at the summit` : null, comment: note.join('\n\n') || null };
+      }
       const v = label => P.num(P.re(text, new RegExp('(\\d+(?:\\.\\d+)?)\\s*["″]\\s*' + label, 'i')));
       const lifts = [...doc.querySelectorAll('.mWPSList.type_lift .liftItem')], trails = [...doc.querySelectorAll('.trailItem')];
       const intro = [...doc.querySelectorAll('section.intro')].map(s => [...s.querySelectorAll('p')].map(p => p.textContent.trim()).filter(Boolean)).find(ps => ps.some(t => /patrol|snow/i.test(t))) || [];
@@ -1073,7 +1159,7 @@ const MEM = new Map();
 const INFLIGHT = new Map();
 // Data this device fetched is also kept in IndexedDB: reused while fresh, and shown (marked stale) when a source is down.
 // Bump CACHE_V whenever a cached data shape changes, so devices drop entries saved by older code.
-const CACHE_V = 'v3:';
+const CACHE_V = 'v5:';
 const Disk = {
   db: null,
   open() {
@@ -1120,7 +1206,7 @@ function staleNote(t) {
 // ---------------------------------------------------------------- NOAA / NWS
 async function getPoints(r) {
   return memo('points:' + r.id, DAY, async () => {
-    const j = await Net.json(`https://api.weather.gov/points/${r.lat.toFixed(4)},${r.lon.toFixed(4)}`, { accept: 'application/geo+json' });
+    const j = await Net.json(`https://api.weather.gov/points/${r.flat.toFixed(4)},${r.flon.toFixed(4)}`, { accept: 'application/geo+json' });
     const p = j.properties;
     return { cwa: p.cwa, gridId: p.gridId, gridX: p.gridX, gridY: p.gridY, forecast: p.forecast, hourly: p.forecastHourly, grid: p.forecastGridData,
       stations: p.observationStations, radar: p.radarStation, tz: p.timeZone, zone: (p.forecastZone || '').split('/').pop(),
@@ -1202,7 +1288,7 @@ async function getObs(r) {
 }
 async function getAlerts(r) {
   return memo('alerts:' + r.id, 10 * MIN, async () => {
-    const j = await nwsJson(`https://api.weather.gov/alerts/active?point=${r.lat.toFixed(4)},${r.lon.toFixed(4)}`);
+    const j = await nwsJson(`https://api.weather.gov/alerts/active?point=${r.flat.toFixed(4)},${r.flon.toFixed(4)}`);
     return (j.features || []).map(f => { const p = f.properties; return { event: p.event, headline: p.headline, severity: p.severity, desc: p.description, instr: p.instruction, ends: p.ends || p.expires, sender: p.senderName }; });
   });
 }
@@ -1313,9 +1399,9 @@ function dailyErr(e) {
 async function getModels(r) {
   return memo('models:' + r.id, 60 * MIN, async () => {
     const el = [ft2m(r.base), ft2m(r.summit)].map(Math.round).join(',');
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${r.lat},${r.lat}&longitude=${r.lon},${r.lon}&elevation=${el}` +
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${r.flat},${r.flat}&longitude=${r.flon},${r.flon}&elevation=${el}` +
       `&daily=snowfall_sum,precipitation_sum,temperature_2m_max,temperature_2m_min&models=${Object.keys(omFor(r)).join(',')}` +
-      `&past_days=7&forecast_days=16&timezone=auto&temperature_unit=fahrenheit&precipitation_unit=inch`;
+      `&past_days=15&forecast_days=16&timezone=auto&temperature_unit=fahrenheit&precipitation_unit=inch`;
     const arr = await Net.json(url), om = omFor(r);
     const pick = d => {
       const o = { snow: {}, precip: {}, tmax: {}, tmin: {} };
@@ -1336,7 +1422,7 @@ async function getModels(r) {
 async function getHourlyModel(r) {
   return memo('hourly:' + r.id, 60 * MIN, async () => {
     const el = [ft2m(r.base), ft2m(r.summit)].map(Math.round).join(',');
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${r.lat},${r.lat}&longitude=${r.lon},${r.lon}&elevation=${el}` +
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${r.flat},${r.flat}&longitude=${r.flon},${r.flon}&elevation=${el}` +
       `&hourly=snowfall,temperature_2m,freezing_level_height,snow_depth&models=gfs_seamless&past_days=7&forecast_days=2&timezone=auto` +
       `&temperature_unit=fahrenheit&precipitation_unit=inch`;
     const arr = await Net.json(url);
@@ -1401,7 +1487,7 @@ async function getFinder(region) {
 }
 async function finderChunk(list) {
   const many = x => Array.isArray(x) ? x : [x];
-  const lat = list.map(r => r.lat).join(','), lon = list.map(r => r.lon).join(',');
+  const lat = list.map(r => r.flat).join(','), lon = list.map(r => r.flon).join(',');
   const el = list.map(r => Math.round(ft2m(r.summit))).join(',');
   const base = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&elevation=${el}&timezone=auto&temperature_unit=fahrenheit&precipitation_unit=inch`;
   // Open-Meteo answers 429 when many regions load at once; wait and try again.
@@ -1528,7 +1614,7 @@ const wmoText = c => WMO[c] ?? '–';
 function meteoblue(r) { const f = (v, p, n) => Math.abs(v).toFixed(2) + (v >= 0 ? p : n); return `https://www.meteoblue.com/en/weather/week/${f(r.lat, 'N', 'S')}${f(r.lon, 'E', 'W')}`; }
 async function getWorld(r) {
   return memo('world:' + r.id, 30 * MIN, async () => {
-    const d = await Net.json(`https://api.open-meteo.com/v1/forecast?latitude=${r.lat}&longitude=${r.lon}&elevation=${Math.round(ft2m(r.summit))}` +
+    const d = await Net.json(`https://api.open-meteo.com/v1/forecast?latitude=${r.flat}&longitude=${r.flon}&elevation=${Math.round(ft2m(r.summit))}` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max` +
       `&current=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m&forecast_days=7&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`);
     const D = d.daily, periods = [];
@@ -1565,7 +1651,7 @@ async function getAvyCanada(r) {
 async function getGrid(r) { return isUS(r) ? getNwsGrid(r) : getModelGrid(r); }
 async function getModelGrid(r) {
   return memo('mgrid:' + r.id, 60 * MIN, async () => {
-    const d = await Net.json(`https://api.open-meteo.com/v1/forecast?latitude=${r.lat}&longitude=${r.lon}&elevation=${Math.round(ft2m(r.summit))}&hourly=temperature_2m,snowfall,freezing_level_height,wind_speed_10m,wind_gusts_10m&models=${isCA(r) ? 'gem_seamless' : 'best_match'}&forecast_days=8&timezone=auto&temperature_unit=fahrenheit&precipitation_unit=inch&wind_speed_unit=mph`);
+    const d = await Net.json(`https://api.open-meteo.com/v1/forecast?latitude=${r.flat}&longitude=${r.flon}&elevation=${Math.round(ft2m(r.summit))}&hourly=temperature_2m,snowfall,freezing_level_height,wind_speed_10m,wind_gusts_10m&models=${isCA(r) ? 'gem_seamless' : 'best_match'}&forecast_days=8&timezone=auto&temperature_unit=fahrenheit&precipitation_unit=inch&wind_speed_unit=mph`);
     const h = d.hourly, off = offsetStr(d.utc_offset_seconds), t0 = Math.floor(Date.now() / H) * H, N = 168, at = new Map(h.time.map((s, j) => [Date.parse(s + ':00' + off), j]));
     const pick = (arr, f = v => v) => Array.from({ length: N }, (_, i) => { const j = at.get(t0 + i * H); return j == null || arr[j] == null ? null : round(f(arr[j], j), 2); });
     return { source: 'model', updated: new Date().toISOString(), elev: r.summit, t0, tz: d.timezone, temp: pick(h.temperature_2m),
@@ -1576,7 +1662,7 @@ async function getModelGrid(r) {
 // Ensembles: 31 GFS runs (NOAA GEFS) and 51 ECMWF runs give real odds and a confidence score.
 async function getEnsemble(r) {
   return memo('ens:' + r.id, 2 * H, async () => {
-    const base = `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${r.lat}&longitude=${r.lon}&elevation=${Math.round(ft2m(r.summit))}&daily=snowfall_sum,temperature_2m_max&timezone=auto&precipitation_unit=inch&temperature_unit=fahrenheit`;
+    const base = `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${r.flat}&longitude=${r.flon}&elevation=${Math.round(ft2m(r.summit))}&daily=snowfall_sum,temperature_2m_max&timezone=auto&precipitation_unit=inch&temperature_unit=fahrenheit`;
     const res = await Promise.allSettled([Net.json(base + '&models=gfs_seamless&forecast_days=16'), Net.json(base + '&models=ecmwf_ifs025&forecast_days=15')]);
     const members = [], used = []; let dates = null;
     res.forEach((x, i) => {
@@ -1707,6 +1793,37 @@ function miniStake(v, max, { lo = null, hi = null, w = 14, h = 54 } = {}) {
 }
 
 // ---------------------------------------------------------------- charts
+// The snow timeline, read like a row of stakes: 15 days back, the last 24 hours, 15 days ahead.
+// `now` is { v, src } for the last 24 hours (resort report, else SNOTEL, else model).
+function timelineHtml(days, now) {
+  const t = Math.max(0, days.findIndex(d => !d.past));
+  const past = days.slice(Math.max(0, t - 15), t), fut = days.slice(t, t + 15);
+  while (past.length < 15) past.unshift(null);
+  while (fut.length < 15) fut.push(null);
+  const top = Math.max(6, ...[...past, ...fut].map(d => d?.v ?? 0)); // bars scale to the blend; a range tick that runs higher stops at the top
+  const pct = v => Math.round(Math.min(1, Math.max(0, v || 0) / top) * 100);
+  const num = v => v < 0.05 ? '0' : v < 0.95 ? v.toFixed(1).slice(1) : String(Math.round(v));
+  const day = (d, i) => {
+    if (!d) return '<li aria-hidden="true"><span></span><span class="tl-bar"></span><span class="tl-d">&nbsp;</span></li>';
+    const lab = dayLabel(d.key), wd = new Date(d.key + 'T12:00:00').getDay(), v = d.v ?? 0, range = !d.past && d.lo != null && d.hi - d.lo >= 0.5;
+    const tip = `${lab.dow} ${lab.md}: ${fmtIn(v)}" ${d.past ? 'fell (model estimate)' : `forecast${range ? `, models ${fmtIn(d.lo)}–${fmtIn(d.hi)}"` : ''}`}`;
+    const today = !d.past && i === 0;
+    return `<li class="${wd === 0 || wd === 6 ? 'wk' : ''}${today ? ' today' : ''}" title="${esc(tip)}"><span class="visually-hidden">${esc(tip)}${today ? ', today' : ''}</span><span class="tl-v ${v < 0.05 ? 'zero' : v >= 6 ? 'big' : ''}" aria-hidden="true">${num(v)}</span><span class="tl-bar" aria-hidden="true" style="--h:${pct(v)}%">${range ? `<i style="--lo:${pct(d.lo)}%;--hi:${pct(d.hi)}%"></i>` : ''}</span><span class="tl-d" aria-hidden="true"><b>${lab.dow[0]}</b>${lab.dom}</span></li>`;
+  };
+  const group = (list, label, isPast, from) => {
+    const have = list.filter(Boolean), tot = sum(have.map(d => d.v));
+    // The range is the lowest and highest single-model total for the block (models that cover every day in it).
+    const per = Object.keys(have[0]?.vals || {}).filter(id => have.every(d => d.vals[id] != null)).map(id => sum(have.map(d => d.vals[id])));
+    const full = have.length === list.length, lo = per.length > 1 ? Math.min(tot, ...per) : tot, hi = per.length > 1 ? Math.max(tot, ...per) : tot;
+    return `<div class="tl-g ${isPast ? 'past' : ''}" role="group" aria-label="${esc(label)}: ${full ? fmtIn(tot) + ' inches' : 'not enough data'}"><div class="tl-h"><span class="tl-k">${label}</span><span class="tl-t">${full ? fmtIn(tot) + '"' : '–'}${full && !isPast && hi - lo >= 1 ? `<small>${fmtIn(lo)}–${fmtIn(hi)}</small>` : ''}</span></div><ol class="tl-days" role="list">${list.map((d, i) => day(d, from + i)).join('')}</ol></div>`;
+  };
+  return `<div class="tl-scroll" tabindex="0" role="group" aria-label="Snow timeline: the last 15 days, the last 24 hours and the next 15 days"><div class="tl">
+    ${group(past.slice(0, 5), 'Prev 11–15 days', true, 0)}${group(past.slice(5, 10), 'Prev 6–10 days', true, 5)}${group(past.slice(10), 'Prev 1–5 days', true, 10)}
+    <div class="tl-now" role="group" aria-label="Last 24 hours"><span class="tl-k">Last 24 hours</span><b>${now?.v != null ? fmtIn(now.v) + '"' : '–'}</b><span class="src">${esc(now?.src || 'Loading')}</span></div>
+    ${group(fut.slice(0, 5), 'Next 1–5 days', false, 0)}${group(fut.slice(5, 10), 'Next 6–10 days', false, 5)}${group(fut.slice(10), 'Next 11–15 days', false, 10)}
+  </div></div>
+  <div class="legend"><span><i style="background:var(--snow);opacity:.38"></i>Already fallen, estimated from the models</span><span><i style="background:var(--snow)"></i>Forecast, NFOPD blend</span><span><i style="background:var(--lamp);width:2px"></i>Range across models</span><span class="tl-hint">Swipe right for the last 15 days</span></div>`;
+}
 function dailyChart(days, { title = 'Daily snowfall' } = {}) {
   const bw = 30, gap = 10, padL = 36, padR = 10, padT = 28, padB = 46, H_ = 240;
   const W = padL + padR + days.length * (bw + gap);
@@ -1856,7 +1973,7 @@ async function ensureSpot(id) {
   const country = inUS ? 'US' : lat > 41.6 && lon > -141 && lon < -52 ? 'CA' : 'ZZ';
   const ft = elevM == null ? 0 : Math.max(0, Math.round(elevM * 3.28084));
   const om = country !== 'ZZ' ? OM : lat > 34 && lat < 72 && lon > -11 && lon < 45 ? OM_EU : lat > 24 && lat < 50 && lon > 122 && lon < 150 ? OM_JP : OM_SH;
-  const spot = { id, name: `Spot ${fmtLatLon(lat, lon)}`, state: '', region: 'Map pin', lat, lon, base: ft, summit: ft, site: '', country, spot: true, om };
+  const spot = { id, name: `Spot ${fmtLatLon(lat, lon)}`, state: '', region: 'Map pin', lat, lon, flat: lat, flon: lon, base: ft, summit: ft, site: '', country, spot: true, om };
   RBYID[id] = spot;
   return spot;
 }
@@ -1895,8 +2012,8 @@ $('#main').addEventListener('click', e => {
   const on = isFav(b.dataset.star); b.setAttribute('aria-pressed', on); b.innerHTML = on ? ICON.starOn : ICON.star;
 });
 function metaHtml(r) {
-  const wx = isUS(r) ? ['weather.gov', `https://forecast.weather.gov/MapClick.php?lat=${r.lat}&lon=${r.lon}`] : isCA(r) ? ['weather.gc.ca', `https://weather.gc.ca/en/location/index.html?coords=${r.lat.toFixed(2)},${r.lon.toFixed(2)}`] : ['meteoblue', meteoblue(r)];
-  if (r.spot) return `<span>${fmtLatLon(r.lat, r.lon)}</span><span>Elevation ${fmtFt(r.summit)} ft</span><a href="${esc(isUS(r) ? `https://forecast.weather.gov/MapClick.php?lat=${r.lat}&lon=${r.lon}` : meteoblue(r))}" target="_blank" rel="noopener">${isUS(r) ? 'weather.gov' : 'meteoblue'} ${ICON.out}</a>`;
+  const wx = isUS(r) ? ['weather.gov', `https://forecast.weather.gov/MapClick.php?lat=${r.flat}&lon=${r.flon}`] : isCA(r) ? ['weather.gc.ca', `https://weather.gc.ca/en/location/index.html?coords=${r.lat.toFixed(2)},${r.lon.toFixed(2)}`] : ['meteoblue', meteoblue(r)];
+  if (r.spot) return `<span>${fmtLatLon(r.lat, r.lon)}</span><span>Elevation ${fmtFt(r.summit)} ft</span><a href="${esc(isUS(r) ? `https://forecast.weather.gov/MapClick.php?lat=${r.flat}&lon=${r.flon}` : meteoblue(r))}" target="_blank" rel="noopener">${isUS(r) ? 'weather.gov' : 'meteoblue'} ${ICON.out}</a>`;
   const where = isWorld(r) ? COUNTRY_NAME[r.country] || r.country : r.state;
   return `<span>${esc(where)}${where === r.region ? '' : ' · ' + esc(r.region)}</span><span>Base ${fmtFt(r.base)} ft</span><span>Summit ${fmtFt(r.summit)} ft</span>
     ${r.site ? `<a href="${esc(r.site)}" target="_blank" rel="noopener">Resort site ${ICON.out}</a>` : ''}<a href="${esc(wx[1])}" target="_blank" rel="noopener">${wx[0]} ${ICON.out}</a>`;
@@ -1950,14 +2067,28 @@ async function renderHero(el, r, opts = {}) {
 // ---------------------------------------------------------------- Home
 // Home: no resort selected. Favorites, a map of every area colored by the next 5 days, and the ranked list.
 function renderHome(main) {
-  delete main.dataset.resort; spy?.disconnect(); lazy?.disconnect();
+  delete main.dataset.resort; spy?.disconnect(); lazy?.disconnect(); dropPinMap();
   if (state.map) { state.map.remove(); state.map = null; }
   const regionOpts = [...Object.keys(GROUPS).map(g => [g, GROUP_LABEL[g]]), ...REGIONS.filter(g => RESORTS.some(r => r.region === g)).map(g => [g, '\u00a0\u00a0' + g])];
   main.innerHTML = `<div class="wrap">
-    <header class="home-hero">
-      <h1 class="hero-title"><span>No Friends</span> <span>On <em>Powder Days</em></span></h1>
-      <p class="hero-sub">Where it's snowing across North America and the world's big mountains, from NOAA, the models and the resorts themselves. Pick a resort for its full forecast, odds, snow report and cams.</p>
+    <header class="home-hero${heroSkip() > 5 ? ' played' : ''}" style="--skip:${heroSkip().toFixed(2)}s">
+      <div class="hero-art" aria-hidden="true"><svg viewBox="0 0 520 320" preserveAspectRatio="xMaxYMax meet">
+        <defs><radialGradient id="nf-glow" cx="60%" cy="82%" r="56%"><stop offset="0" stop-color="#F6C46A" stop-opacity=".2"/><stop offset="1" stop-color="#F6C46A" stop-opacity="0"/></radialGradient>
+        <linearGradient id="nf-face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34506F"/><stop offset="1" stop-color="#16283F"/></linearGradient></defs>
+        <rect width="520" height="320" fill="url(#nf-glow)"/>
+        <path d="M0 320 V240 C 30 222, 44 204, 62 198 C 80 204, 92 214, 108 206 C 128 190, 138 166, 156 152 C 176 166, 190 184, 206 186 C 224 180, 236 166, 252 160 C 330 170, 430 190, 520 206 V320 Z" fill="#101E31"/>
+        <path d="M118 320 C 170 286, 204 262, 236 214 C 262 184, 300 120, 350 58 C 392 108, 452 176, 520 232 V320 Z" fill="url(#nf-face)"/>
+        <path d="M350 58 C 392 108, 452 176, 520 232 V320 H402 C 398 232, 374 132, 350 58 Z" fill="#0E1B2D" opacity=".7"/>
+        <path d="M236 214 C 262 184, 300 120, 350 58" fill="none" stroke="#EEF3F8" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>
+        ${heroTracks()}
+      </svg></div>
+      <div class="hero-snow" aria-hidden="true"></div>
+      <div class="hero-text">
+        <h1 class="hero-title"><span>No Friends</span> <span>On <em>Powder Days</em></span></h1>
+        <p class="hero-sub">Where it's snowing across North America and the world's big mountains, from NOAA, the models and the resorts themselves. Pick a resort for its full forecast, odds, snow report and cams.</p>
+      </div>
     </header>
+    <section class="favs" aria-labelledby="favs-h"><h2 class="home-h" id="favs-h">Favorites</h2><div class="favstrip" id="favstrip"></div></section>
     <section class="sec" id="home-daily">
       <div class="sec-head"><h2>NFOPD Daily</h2><span class="src">AI-written from forecaster discussions and the models · updates a few times a day</span></div>
       <div class="daily-pick" role="group" aria-label="Region">${dailyChips()}</div>
@@ -1966,7 +2097,6 @@ function renderHome(main) {
       <div id="experts-body"><p class="loading">Loading</p></div>
     </section>
     <h2 class="home-h">Where it's snowing</h2>
-    <div class="favstrip" id="favstrip"></div>
     <section class="mapbox" aria-label="Map of ski areas">
       <div id="map"></div>
       <div class="map-tools"><div class="seg" role="group" aria-label="Map layers" id="map-layers"></div><div class="spot-pick" id="spot-pick">Tap anywhere off the dots for that spot's forecast.</div></div>
@@ -1981,7 +2111,7 @@ function renderHome(main) {
       <div id="rank"><p class="loading">Loading forecasts</p></div>
     </section>
   </div>`;
-  main.querySelector('.seg').onclick = e => { const b = e.target.closest('[data-sort]'); if (!b) return; state.sort = b.dataset.sort; store.set('sort', state.sort); main.querySelectorAll('[data-sort]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawRank(); };
+  main.querySelector('.seg[aria-label="Rank by"]').onclick = e => { const b = e.target.closest('[data-sort]'); if (!b) return; state.sort = b.dataset.sort; store.set('sort', state.sort); main.querySelectorAll('[data-sort]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawRank(); };
   $('#region').onchange = e => {
     state.region = e.target.value; store.set('region2', state.region); state.rankLimit = 40;
     drawRank(); fitMap(); loadRegions(regionList(state.region));
@@ -1989,8 +2119,8 @@ function renderHome(main) {
     if (dg && (DAILY.includes(state.region) || groupOf(dailyRegion()) !== state.region)) { store.set('dailyRegion', dg); const pick = $('.daily-pick'); if (pick) pick.innerHTML = dailyChips(); drawDaily(); }
   };
   main.querySelector('.daily-pick').onclick = e => { const b = e.target.closest('[data-daily]'); if (!b) return; store.set('dailyRegion', b.dataset.daily); drawDaily(); };
-  drawFavStrip(); initMap(); drawRank();
-  if (Net.mode !== 'starting') { loadRegions(regionList(state.region)); drawDaily(); }
+  drawFavStrip(); initMap(); drawRank(); heroMotion();
+  if (Net.mode !== 'starting') { loadRegions([...new Set([...state.favs.map(id => RBYID[id]?.region).filter(Boolean), ...regionList(state.region)])]); drawDaily(); }
 }
 // The Daily shows the last region picked (chips or the region menu), else your first favorite's region.
 function dailyRegion() {
@@ -2018,23 +2148,118 @@ async function drawDaily() {
 }
 const SNOWCOLOR = ['#3E5978', '#6FB4FF', '#BFDFFF', '#F4F8FC', '#FF6A13'];
 const snowColor = v => v == null ? '#2A3B52' : v < 1 ? SNOWCOLOR[0] : v < 3 ? SNOWCOLOR[1] : v < 6 ? SNOWCOLOR[2] : v < 12 ? SNOWCOLOR[3] : SNOWCOLOR[4];
+// Two skiers' tracks weaving figure-8s down the face: the same even turns in opposite phase, the second
+// skier a beat behind the first. Turns start tight near the summit, where the face is narrow.
+const heroSkip = () => state.heroStart ? (Date.now() - state.heroStart) / 1000 : 0;
+function heroTracks() {
+  const x0 = 349, y0 = 78, x1 = 318, y1 = 326, eights = 3.5, n = 160;
+  const line = sign => Array.from({ length: n + 1 }, (_, i) => {
+    const t = i / n, k = Math.min(1, t / 0.34), amp = 2 + 19 * k * k * (3 - 2 * k);
+    return `${i ? 'L' : 'M'}${(x0 + (x1 - x0) * t + sign * amp * Math.sin(2 * Math.PI * eights * t)).toFixed(1)} ${(y0 + (y1 - y0) * t).toFixed(1)}`;
+  }).join(' ');
+  return [1, -1].map((sign, i) => { const d = line(sign); return `<path class="hero-track${i ? ' b' : ''}" pathLength="1" d="${d}"/><circle class="hero-skier${i ? ' b' : ''}" r="3" style="offset-path:path('${d}')"/>`; }).join('');
+}
+// Favorites redraw every time a region's forecasts land; each one's last-24-hour lookup runs once per 10 minutes.
+const FAV24 = new Map();
+function fav24(r) {
+  const hit = FAV24.get(r.id);
+  if (hit && Date.now() - hit.t < 10 * MIN) return hit.p;
+  const p = last24For(r); FAV24.set(r.id, { t: Date.now(), p });
+  return p;
+}
+// New snow in the last 24 hours, from the best source there is: the resort's report, then SNOTEL, then the model.
+async function last24For(r) {
+  const [rep, sn, hm] = await Promise.allSettled([r.spot ? null : getReport(r), getSnotel(r), getHourlyModel(r)]);
+  const rp = rep.value, s = sn.value, h = hm.value;
+  return rp?.new24 != null ? { v: rp.new24, src: 'Resort snow report', short: 'Resort report' }
+    : s?.new24 != null ? { v: s.new24, src: `SNOTEL ${s.station.name}`, short: 'SNOTEL' }
+    : { v: h?.summit?.p24 ?? null, src: 'Model estimate', short: 'Model' };
+}
+// Hero motion: a little snow in the air while the hero is on screen. The tracks draw once per visit.
+let heroWatch = null;
+function heroMotion() {
+  heroWatch?.disconnect(); heroWatch = null;
+  const hero = $('.home-hero'), box = $('.hero-snow'); if (!hero || !box) return;
+  state.heroStart ||= Date.now();
+  const title = $('.hero-title'); if (title) hero.style.setProperty('--art-h', `${title.offsetHeight - 6}px`);
+  const left = 5200 - heroSkip() * 1000;
+  if (left <= 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  box.style.setProperty('--fall', `${hero.offsetHeight + 24}px`);
+  box.innerHTML = Array.from({ length: 22 }, () => `<i style="--x:${rnd(0, 100).toFixed(1)}%;--s:${rnd(1.6, 3.6).toFixed(1)}px;--o:${rnd(.25, .7).toFixed(2)};--d:${rnd(9, 19).toFixed(1)}s;--dl:${(-rnd(0, 19)).toFixed(1)}s;--dx:${rnd(-46, 22).toFixed(0)}px"></i>`).join('');
+  // The snow falls while the tracks are being laid, then settles: nothing on the page keeps moving.
+  setTimeout(() => { box.classList.add('done'); setTimeout(() => { box.innerHTML = ''; }, 1400); }, left);
+  heroWatch = new IntersectionObserver(es => box.classList.toggle('off', !es[0].isIntersecting));
+  heroWatch.observe(hero);
+}
 function drawFavStrip() {
   const el = $('#favstrip'); if (!el) return;
   const f = state.finder || {}, favs = state.favs.map(id => RBYID[id]).filter(Boolean);
-  el.innerHTML = favs.length ? favs.map(r => `<a class="fav-card" href="#${r.id}"><span class="fav-n">${ICON.favDot}${esc(r.name)}</span><span class="fav-v">${f[r.id] ? fmtIn(f[r.id].n5) + '"' : '…'}</span><span class="fav-k">next 5 days${f[r.id] ? ` · ${fmtIn(f[r.id].p24)}" last 24h` : ''}</span></a>`).join('')
-    : `<p class="empty">Star resorts to pin them here.</p>`;
+  const bars = (arr, top) => `<span class="fav-bars" aria-hidden="true">${arr.map(v => `<i style="--h:${Math.round(Math.min(1, (v || 0) / top) * 100)}%"></i>`).join('')}</span>`;
+  el.innerHTML = favs.length ? favs.map(r => {
+    const x = f[r.id], head = `<span class="fav-n">${ICON.favDot}${esc(r.name)}<span class="fav-st">${esc(r.spot ? '' : (isWorld(r) ? COUNTRY_NAME[r.country] || r.country : r.state) + ' · ')}${fmtFt(r.summit)} ft</span></span>`;
+    if (!x) return `<a class="fav-card" href="#${r.id}">${head}<span class="fav-wait">Loading forecast</span></a>`;
+    const fut = x.days.slice(x.today, x.today + 15), top = Math.max(6, ...fut);
+    const blk = (k, v, arr) => `<span class="fav-b"><span class="tl-k">${k}</span><b>${fmtIn(v)}"</b>${bars(arr, top)}</span>`;
+    return `<a class="fav-card" href="#${r.id}" aria-label="${esc(r.name)}: next 1 to 5 days ${fmtIn(x.n5)} inches, days 6 to 10 ${fmtIn(x.n10)}, days 11 to 15 ${fmtIn(x.n15)}">${head}<span class="fav-row"><span class="fav-now" data-now="${esc(r.id)}"><span class="tl-k">Last 24h</span><b>${fmtIn(x.p24)}"</b><span class="fav-src">Model</span></span>${blk('Next 1–5', x.n5, fut.slice(0, 5))}${blk('6–10', x.n10, fut.slice(5, 10))}${blk('11–15', x.n15, fut.slice(10, 15))}</span></a>`;
+  }).join('') : `<p class="empty">Star a resort to pin it here.</p>`;
+  // Swap each card's model estimate for what the resort or the nearest SNOTEL gauge measured, when there is one.
+  for (const r of favs) fav24(r).then(n => {
+    const box = el.querySelector(`[data-now="${CSS.escape(r.id)}"]`); if (!box || n.v == null) return;
+    box.querySelector('b').textContent = fmtIn(n.v) + '"'; box.querySelector('.fav-src').textContent = n.short; box.title = n.src;
+    const link = box.closest('a'), base = link?.getAttribute('aria-label');
+    if (base && !/last 24 hours/.test(base)) link.setAttribute('aria-label', base.replace(': ', `: ${fmtIn(n.v)} inches in the last 24 hours, from ${n.src}; `));
+  }, () => {});
 }
 // The map: Leaflet with CARTO's dark basemap. In the desktop app, tiles come through curl like everything else.
-function initMap() {
-  const el = $('#map'); if (!el) return;
-  if (!window.L) { el.innerHTML = '<p class="empty" style="padding:16px">The map could not load. The list below has every resort.</p>'; return; }
-  const map = L.map(el, { preferCanvas: true, scrollWheelZoom: false, worldCopyJump: true, zoomSnap: 0.5 });
-  const Tiles = L.TileLayer.extend({ createTile(coords, done) {
+// Map tiles. In the desktop app they come through curl like everything else.
+function nfTiles() {
+  return nfTiles.c ||= L.TileLayer.extend({ createTile(coords, done) {
     const img = document.createElement('img'), url = this.getTileUrl(coords); img.alt = '';
     if (Net.mode === 'desktop') Net.image(url).then(src => { img.onload = () => done(null, img); img.src = src; }).catch(e => done(e, img));
     else { img.onload = () => done(null, img); img.onerror = e => done(e, img); img.src = url; }
     return img;
   } });
+}
+// The pinpoint map: where this page's forecast is for, on satellite terrain. A tap moves the point,
+// the way weather.gov's point-forecast map does.
+let pinMapRef = null;
+function dropPinMap() { try { pinMapRef?.remove(); } catch { /* container already gone */ } pinMapRef = null; }
+function drawPinMap(r) {
+  fill('n-pin', `<div class="pinmap" id="pinmap" role="region" aria-label="Map of the forecast point. Arrow keys move the map."></div>
+    <div class="pin-row"><button type="button" class="btn" id="pin-go">Forecast for the map center</button></div>
+    <p class="mute small" style="margin:0">This forecast is for ${fmtLatLon(r.flat, r.flon)}${r.spot ? ` at ${fmtFt(r.summit)} ft` : `, ${r.fxFt ? `about ${fmtFt(r.fxFt)} ft ` : ''}on the upper mountain at ${esc(r.name)}`}. Tap anywhere on the map to move the point and get that spot's forecast. White dots are ski areas.</p>`);
+  const el = $('#pinmap'); if (!el) return;
+  if (!window.L) { $('#pin-go')?.remove(); el.outerHTML = '<p class="empty">The map could not load.</p>'; return; }
+  dropPinMap();
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const map = pinMapRef = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.5, zoomAnimation: !calm, fadeAnimation: !calm, inertia: !calm }).setView([r.flat, r.flon], 12);
+  const near = [], goTo = (lat, lon) => { location.hash = spotId(Math.max(-85, Math.min(85, lat)), ((lon + 540) % 360) - 180) + '-noaa'; };
+  $('#pin-go').onclick = () => { const c = map.getCenter(); goTo(c.lat, c.lng); };
+  const Tiles = nfTiles(), esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  new Tiles(esri + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' }).addTo(map);
+  new Tiles(esri + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(map);
+  for (const x of RESORTS) {
+    if (x.id === r.id || Math.abs(x.lat - r.lat) > 1.2 || Math.abs(x.lon - r.lon) > 1.8) continue;
+    near.push(x);
+    L.circleMarker([x.lat, x.lon], { radius: 5, fillColor: '#EEF3F8', fillOpacity: 0.95, color: '#0B1626', weight: 1 })
+      .bindTooltip(esc(x.name), { direction: 'top', offset: [0, -5] })
+      .on('click', e => { if (e.originalEvent) e.originalEvent._nfopdMarker = true; location.hash = x.id; }).addTo(map);
+  }
+  L.circleMarker([r.flat, r.flon], { radius: 10, color: '#FF6A13', weight: 3, fillColor: '#FF6A13', fillOpacity: 0.25, interactive: false }).addTo(map);
+  map.on('click', e => {
+    if (e.originalEvent?._nfopdMarker) return;
+    // A near miss on a small resort dot means the resort, not a point beside it.
+    const hit = near.map(x => ({ x, d: map.latLngToContainerPoint([x.lat, x.lon]).distanceTo(e.containerPoint) })).sort((a, b) => a.d - b.d)[0];
+    if (hit && hit.d < 22) { location.hash = hit.x.id; return; }
+    goTo(e.latlng.lat, e.latlng.lng);
+  });
+}
+function initMap() {
+  const el = $('#map'); if (!el) return;
+  if (!window.L) { el.innerHTML = '<p class="empty" style="padding:16px">The map could not load. The list below has every resort.</p>'; return; }
+  const map = L.map(el, { preferCanvas: true, scrollWheelZoom: false, worldCopyJump: true, zoomSnap: 0.5 });
+  const Tiles = nfTiles();
   const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
   new Tiles(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13, attribution: 'Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors · ski areas: OpenSkiMap' }).addTo(map);
   new Tiles(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13, pane: 'shadowPane' }).addTo(map);
@@ -2117,7 +2342,7 @@ const NAV_LABEL = { summary: 'Summary', forecast: 'Forecast', accuracy: 'Accurac
 let spy = null, lazy = null;
 const tabsFor = r => r.spot ? TABS.filter(t => t !== 'report' && t !== 'cams') : TABS;
 function renderResort(main, r, tab) {
-  spy?.disconnect(); lazy?.disconnect();
+  spy?.disconnect(); lazy?.disconnect(); dropPinMap(); heroWatch?.disconnect();
   main.dataset.resort = r.id; main.dataset.mode = Net.mode;
   main.innerHTML = `<div class="wrap">
     <div class="rhead"><div class="rhead-top"><h1>${esc(r.name)}</h1>${r.spot ? '' : starBtn(r)}</div><div class="meta">${metaHtml(r)}</div></div>
@@ -2176,7 +2401,7 @@ function avyChip(a) {
 
 async function tabSummary(el, r) {
   el.innerHTML = `<section class="hero" id="hero" aria-label="${esc(r.name)} this morning"></section><div id="s-alerts"></div>
-    ${slot('s-chart', 'Past 7 days and next 16', isUS(r) ? 'Upper mountain · NFOPD blend · NWS diamonds' : 'Upper mountain · NFOPD blend')}
+    ${slot('s-chart', 'Snow timeline', 'Upper mountain · inches · 5-day totals')}
     ${slot('s-xcheck', 'Last 24 hours, three ways', 'Resort report vs SNOTEL vs model')}
     ${slot('s-now', 'Right now', OFFICIAL(r))}`;
   renderHero($('#hero'), r);
@@ -2184,15 +2409,24 @@ async function tabSummary(el, r) {
   const PR = { models: getModels(r), grid: getGrid(r), hourly: getHourlyModel(r), snotel: getSnotel(r), rep: getReport(r), alerts: ec ? ec.then(e => e.warnings) : getAlerts(r), fc: ec || getNwsForecast(r), obs: ec ? ec.then(e => e.now) : getObs(r) };
   const S = {}; for (const [k, pr] of Object.entries(PR)) S[k] = pr.then(value => ({ value }), reason => ({ reason }));
   const all = async keys => Object.fromEntries(await Promise.all(keys.map(async k => [k, await S[k]])));
-  const legend = grid => `<div class="legend"><span><i style="background:var(--snow)"></i>NFOPD blend (faded = past)</span><span><i style="background:var(--lamp);width:2px"></i>Model range</span><span><i style="background:var(--blaze);transform:rotate(45deg);width:9px;height:9px"></i>NWS official${grid ? '' : ' (loading)'}</span></div>`;
+  // The timeline draws as soon as the models arrive, then again when NWS and the last-24-hour sources land.
+  let tlDays = null, tlNow = null;
+  const drawTl = () => {
+    if (!tlDays || !el.isConnected) return;
+    const was = $('#s-chart .tl-scroll')?.scrollLeft;
+    fill('s-chart', timelineHtml(tlDays, tlNow));
+    const sc = $('#s-chart .tl-scroll'); if (sc) sc.scrollLeft = was ?? Math.max(0, sc.querySelector('.tl-now').offsetLeft - 66);
+  };
   S.models.then(m => {
     if (!m.value) return fill('s-chart', errBox('Models', m.reason));
-    fill('s-chart', dailyChart(buildDays(m.value, null, 'summit')) + legend(false));
-    S.grid.then(g => { if (!g.value) return; const days = buildDays(m.value, g.value, 'summit'); fill('s-chart', dailyChart(days) + legend(true)); logForecast(r, days); });
+    tlDays = buildDays(m.value, null, 'summit'); drawTl();
+    S.grid.then(g => { if (!g.value) return; tlDays = buildDays(m.value, g.value, 'summit'); drawTl(); logForecast(r, tlDays); });
   });
   S.alerts.then(a => { const el2 = $('#s-alerts'); if (el2) el2.innerHTML = (a.value || []).map(x => `<details class="alert"><summary>${esc(x.event)} · until ${esc(fmtTime(x.ends))}</summary><pre>${esc(x.headline)}\n\n${esc(x.desc)}${x.instr ? '\n\n' + esc(x.instr) : ''}</pre></details>`).join(''); });
   all(['rep', 'snotel', 'hourly']).then(({ rep, snotel, hourly }) => {
     const rp = rep.value, sn = snotel.value, hm = hourly.value;
+    tlNow = { v: rp?.new24 ?? sn?.new24 ?? hm?.summit?.p24 ?? null, src: rp?.new24 != null ? 'Resort snow report' : sn?.new24 != null ? `SNOTEL ${sn.station.name}` : hm ? 'Model estimate' : 'No reading yet' };
+    drawTl();
     fill('s-xcheck', `<div class="table-scroll"><table><thead><tr><th>Source</th><th>New snow</th><th>Depth</th><th style="text-align:left">Details</th></tr></thead><tbody>
       <tr><td>Resort report</td><td>${rp?.new24 != null ? fmtIn(rp.new24) + '"' : '–'}</td><td>${rp?.base != null ? (typeof rp.base === 'string' ? esc(rp.base) : fmtIn(rp.base) + '"') : '–'}</td><td style="text-align:left" class="mute">${rp ? `${rp.updated ? 'Updated ' + esc(rp.updated) + ' · ' : ''}<a href="${esc(httpsUrl(reportFor(r)?.page) || r.site)}" target="_blank" rel="noopener">source</a>` : reportFor(r) ? errText(rep.reason) : 'No snow report is available for this resort'}</td></tr>
       <tr><td>SNOTEL, observed</td><td>${sn ? fmtIn(sn.new24) + '"' : '–'}</td><td>${sn?.depth != null ? fmtIn(sn.depth) + '"' : '–'}</td><td style="text-align:left" class="mute">${sn ? `${esc(sn.station.name)}, ${fmtFt(sn.station.elev)} ft, ${sn.station.km} km away · water +${fmtIn(sn.swe24)}"` : errText(snotel.reason) || 'No station within 45 km'}</td></tr>
@@ -2238,7 +2472,7 @@ function drawForecast(r, models, grid, elev, ens) {
       <span class="meter" style="--v:${e.score}%;--c:var(--${c.cls})" role="img" aria-label="Confidence ${e.score} of 100"><i></i></span><span class="small" style="color:var(--${c.cls})">Confidence ${e.score} · ${c.label}</span>`
       : `<span class="mute small">Models ${fmtIn(w?.lo)}–${fmtIn(w?.hi)}"${k && !ens ? ' · odds loading' : ''}</span>`}</div>`;
   }).join('');
-  fill('f-chart', dailyChart(days) + `<p class="mute small" style="margin:0">Snow quality comes from the blended snow-to-liquid ratio.${ens && !ens.error ? ` Odds and confidence come from ${ens.members} ensemble runs (${ens.used.join(' and ')}).` : ''}</p>`);
+  fill('f-chart', dailyChart(days.slice(Math.max(0, days.findIndex(d => !d.past) - 7))) + `<p class="mute small" style="margin:0">Snow quality comes from the blended snow-to-liquid ratio.${ens && !ens.error ? ` Odds and confidence come from ${ens.members} ensemble runs (${ens.used.join(' and ')}).` : ''}</p>`);
   const ids = [...(isUS(r) ? ['nws'] : []), ...(models.ids || Object.values(OM))], show = fut.slice(0, 10), ed = Object.fromEntries((ens?.daily || []).map(x => [x.key, x]));
   const row = (id, label, src) => { const vals = show.map(d => d.vals[id]); if (vals.every(v => v == null)) return ''; return `<tr><td>${esc(label)}<span class="src-tag">${esc(src)}</span></td>${vals.map(v => `<td>${v == null ? '<span class="mute">–</span>' : fmtIn(v)}</td>`).join('')}<td><b>${fmtIn(sum(vals))}</b></td></tr>`; };
   fill('f-models', `<div class="table-scroll"><table><thead><tr><th>Model</th>${show.map(d => { const l = dayLabel(d.key); return `<th>${l.dow} ${l.dom}</th>`; }).join('')}<th>Total</th></tr></thead><tbody>
@@ -2297,12 +2531,14 @@ function accChart(days) {
 
 async function tabNoaa(el, r) {
   if (!isUS(r)) return tabEccc(el, r);
-  const link = `https://forecast.weather.gov/MapClick.php?lat=${r.lat}&lon=${r.lon}`;
+  const link = `https://forecast.weather.gov/MapClick.php?lat=${r.flat}&lon=${r.flon}`;
   el.innerHTML = `<div id="n-alerts"></div>
     ${slot('n-7day', 'Forecast periods', `<a href="${esc(link)}" target="_blank" rel="noopener">Open on weather.gov ${ICON.out}</a>`)}
+    ${slot('n-pin', 'Pinpoint map', 'Tap the map to move the forecast point')}
     ${slot('n-now', 'Current conditions', 'Nearest NWS observing station')}
     ${slot('n-detail', 'Detailed forecast', 'National Weather Service')}
     ${slot('n-radar', 'Radar loop', 'NWS RIDGE')}`;
+  drawPinMap(r);
   const [fc, obs, alerts, pts] = await Promise.allSettled([getNwsForecast(r), getObs(r), getAlerts(r), getPoints(r)]);
   const tz = pts.value?.tz;
   const al = $('#n-alerts'); if (al) al.innerHTML = (alerts.value || []).map(a => `<details class="alert" open><summary>${esc(a.event)} · ${esc(a.sender || '')}</summary><pre>${esc(a.headline)}\n\n${esc(a.desc)}${a.instr ? '\n\nPRECAUTIONARY/PREPAREDNESS ACTIONS\n' + esc(a.instr) : ''}</pre></details>`).join('')
@@ -2319,7 +2555,7 @@ async function tabNoaa(el, r) {
   if (!f) { fill('n-7day', errBox('NWS 7-day forecast', fc.reason)); fill('n-detail', ''); }
   else {
     fill('n-7day', `<div class="periods">${f.periods.map(p => `<div class="period ${p.day ? '' : 'night'}"><div class="pname">${esc(p.name)}</div>${wxIcon(p.short, p.day)}<div class="pshort">${esc(p.short)}</div><div class="ptemp ${p.day ? 'hi' : 'lo'}">${p.day ? 'High' : 'Low'} ${esc(p.t)}°</div>${p.pop ? `<div class="tiny mute">${p.pop}% precip</div>` : ''}</div>`).join('')}</div>
-      <p class="mute small" style="margin:0">Point forecast for ${r.lat.toFixed(3)}, ${r.lon.toFixed(3)} at ${fmtFt(f.elev)} ft${pts.value ? `, ${esc(pts.value.city)} ${esc(pts.value.st)} area, NWS ${esc(pts.value.cwa)}` : ''} · issued ${esc(fmtTime(f.updated, tz))}</p>`);
+      <p class="mute small" style="margin:0">Point forecast for ${r.flat.toFixed(3)}, ${r.flon.toFixed(3)} at ${fmtFt(f.elev)} ft${pts.value ? `, ${esc(pts.value.city)} ${esc(pts.value.st)} area, NWS ${esc(pts.value.cwa)}` : ''} · issued ${esc(fmtTime(f.updated, tz))}</p>`);
     fill('n-detail', `<div class="detailed">${f.periods.map(p => `<div><b>${esc(p.name)}</b><span>${esc(p.detail)}</span></div>`).join('')}</div>`);
   }
   if (pts.value?.radar) {
@@ -2332,7 +2568,8 @@ async function tabNoaa(el, r) {
 
 async function tabEccc(el, r) {
   const src = isCA(r) ? 'Environment and Climate Change Canada' : 'Open-Meteo, best regional model, at the summit';
-  el.innerHTML = `<div id="n-alerts"></div>${slot('n-7day', 'Forecast periods', src)}${slot('n-detail', 'Detailed forecast', src)}`;
+  el.innerHTML = `<div id="n-alerts"></div>${slot('n-7day', 'Forecast periods', src)}${slot('n-pin', 'Pinpoint map', 'Tap the map to move the forecast point')}${slot('n-detail', 'Detailed forecast', src)}`;
+  drawPinMap(r);
   let e;
   try { e = await pointForecast(r); } catch (err) { fill('n-7day', errBox('Point forecast', err)); fill('n-detail', ''); return; }
   const al = $('#n-alerts'); if (al) al.innerHTML = e.warnings.map(a => `<details class="alert" open><summary>${esc(a.event)} · ${esc(a.sender)}</summary><pre>${esc(a.headline)}</pre></details>`).join('');
@@ -2377,7 +2614,7 @@ async function getSeason(r) {
   return memo('season:' + r.id, 6 * H, async () => {
     const start = seasonStart(r.lat), end = new Date(Date.now() - 2 * DAY).toISOString().slice(0, 10);
     if (end <= start) return { start, total: 0, months: [], big: null, days: 0 };
-    const d = await Net.json(`https://archive-api.open-meteo.com/v1/archive?latitude=${r.lat}&longitude=${r.lon}&elevation=${Math.round(ft2m(r.summit))}&start_date=${start}&end_date=${end}` +
+    const d = await Net.json(`https://archive-api.open-meteo.com/v1/archive?latitude=${r.flat}&longitude=${r.flon}&elevation=${Math.round(ft2m(r.summit))}&start_date=${start}&end_date=${end}` +
       `&daily=snowfall_sum,temperature_2m_max&timezone=auto&precipitation_unit=inch&temperature_unit=fahrenheit`);
     const t = d.daily.time, snow = d.daily.snowfall_sum.map((v, i) => v == null ? 0 : v / 7 * kuchera(d.daily.temperature_2m_max[i]));
     const months = new Map(); let big = null;
@@ -2495,7 +2732,7 @@ function banner(html) { const b = $('#banner'); b.innerHTML = html; b.hidden = !
     else banner('<p>To install NFOPD on iPhone or iPad, tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>');
   };
 })();
-$('#refresh').onclick = () => { if (Net.mode === 'snapshot') return; MEM.clear(); Disk.open().then(db => { try { db?.transaction('kv', 'readwrite').objectStore('kv').clear(); } catch { /* ignore */ } }).finally(() => { state.finderRegions = new Set(); route(); }); };
+$('#refresh').onclick = () => { if (Net.mode === 'snapshot') return; MEM.clear(); Disk.open().then(db => { try { db?.transaction('kv', 'readwrite').objectStore('kv').clear(); } catch { /* ignore */ } }).finally(() => { state.finderRegions = new Set(); FAV24.clear(); delete $('#main').dataset.resort; route(); }); };
 window.addEventListener('hashchange', route);
 
 // The installed app's Dock icon: the NFOPD mark rendered to a 256 px PNG.

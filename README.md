@@ -19,6 +19,8 @@ The whole app is one file, `nfopd.html`.
 
 Every operating downhill area in the western US and Canada. East of the Rockies only those with 1,000 ft or more of vertical (`EAST_MIN_VERT` in `nfopd.html`). About 950 larger areas outside North America are listed with model forecasts only.
 
+Forecasts for North American resorts are read at an upper-mountain point for each resort (`FXPT` in `nfopd.html`), not at the listed base location. A base-village point can put the NWS grid cell and the models on the valley floor, which under-forecasts snow.
+
 ## Data sources
 
 - **NOAA / National Weather Service** (US): the official grid forecast (hourly snowfall, temperature, snow level, wind), the 7-day point forecast (the same one weather.gov's MapClick page shows), observations, watches and warnings, Area Forecast Discussions, and RIDGE radar loops.
@@ -36,6 +38,8 @@ Every operating downhill area in the western US and Canada. East of the Rockies 
 - **NFOPD blend.** A weighted blend of NWS (3), NBM (3), HRRR (2), ECMWF (2), GFS (1), GEM (1) and ICON (1), shown with the model range. With four or more models, the single highest and lowest are left out of the average, so one runaway model can't drive the number.
 - **Odds and confidence out to 15 days.** For the next 5 days, days 6–10 and days 11–15: the likely range (10th to 90th percentile across 82 ensemble runs), the chance of 1", 6" and 12"+, and a 0–100 confidence score (the share of runs within 40% or 1" of the middle run).
 - **Track record.** For each resort with a nearby SNOTEL gauge, what the models forecast 1, 3 and 5 days ahead over the last 30 days, compared with the water the gauge measured. You see storm days caught and whether forecasts ran wet or dry.
+- **Snow timeline.** On every resort page: daily snowfall for the last 15 days, the last 24 hours and the next 15 days, grouped in 5-day blocks with totals and the model range. Past days are model estimates, not measurements.
+- **Pinpoint map.** Each forecast page shows a satellite map of the exact forecast point. Tap the map to move the point and load that spot's forecast.
 - **Kuchera snow ratio.** Models delivered as liquid × 7 are converted to snow with a temperature-based ratio. NBM already carries NOAA's own snow ratio, so its snowfall is used as issued.
 - **Three-way 24-hour check.** The resort's reported new snow, the SNOTEL depth gain and the model estimate, side by side.
 - **Snow level against the mountain.** The snow level is plotted against base and summit elevation.

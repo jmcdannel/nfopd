@@ -14,7 +14,7 @@ const fail = (message, status) => Object.assign(new Error(message), { status, ex
 // Offices whose AFDs cover each region's ski areas, and summits that represent it.
 // [name, lat, lon, summit ft]
 const REGIONS = {
-  'Idaho': { afd: ['BOI', 'PIH', 'OTX'], spots: [['Brundage', 45.004, -116.155, 7640], ['Tamarack', 44.671, -116.123, 7700], ['Sun Valley', 43.668, -114.403, 9150], ['Schweitzer', 48.368, -116.623, 6400]] },
+  'Idaho': { afd: ['BOI', 'PIH', 'OTX'], spots: [['Brundage', 45.005, -116.1375, 7640], ['Tamarack', 44.6728, -116.1676, 7700], ['Sun Valley', 43.668, -114.403, 9150], ['Schweitzer', 48.368, -116.623, 6400]] },
   'Northern Rockies': { afd: ['MSO', 'TFX', 'RIW'], spots: [['Big Sky', 45.284, -111.401, 11166], ['Jackson Hole', 43.588, -110.828, 10450], ['Whitefish', 48.484, -114.353, 6817], ['Bridger Bowl', 45.817, -110.898, 8700]] },
   'Utah': { afd: ['SLC'], spots: [['Alta', 40.588, -111.638, 10550], ['Snowbasin', 41.216, -111.857, 9350], ['Park City', 40.651, -111.508, 10000], ['Brian Head', 37.702, -112.850, 11300]] },
   'Colorado': { afd: ['BOU', 'GJT', 'PUB'], spots: [['Steamboat', 40.457, -106.804, 10568], ['Vail', 39.606, -106.355, 11570], ['Wolf Creek', 37.472, -106.793, 11904], ['Arapahoe Basin', 39.642, -105.872, 13050]] },
