@@ -1,6 +1,6 @@
 # NFOPD: No Friends On Powder Days
 
-<img src="brand/nfopd-mark.svg" width="72" alt="NFOPD mark: a lone set of ski tracks in fresh powder below a snow stake">
+<img src="brand/nfopd-mark.svg" width="72" alt="NFOPD mark: two ski tracks weaving figure-8s in fresh powder below a snow stake">
 
 Snow forecasts for the pre-dawn powder check. NOAA-first forecasts, a multi-model blend with real odds, each resort's own snow report and webcams, and a public track record of how the forecasts did. Covers every operating downhill area in the US and Canada, with hand-checked snow reports and cams for Idaho.
 
@@ -49,7 +49,7 @@ Forecasts for North American resorts are read at an upper-mountain point for eac
 | | |
 | --- | --- |
 | Name | **NFOPD**, short for No Friends On Powder Days |
-| Mark | `brand/nfopd-mark.svg`: a blaze-orange snow stake above fresh powder, carved by one lone set of tracks |
+| Mark | `brand/nfopd-mark.svg`: a blaze-orange snow stake above fresh powder, carved by two tracks weaving figure-8s |
 | Wordmark | NFOPD in Barlow Condensed ExtraBold Italic: NFO in snow white, PD in powder blue `#6FB4FF` with a snow-white cap across the top of each letter; tagline in Barlow Condensed Bold caps, tracked wide, in lamp amber |
 | Colors | Blaze orange `#FF6A13` · Night navy `#0B1626` · Snow white `#EEF3F8` · Powder blue `#6FB4FF` · Lamp amber `#F6C46A` |
 

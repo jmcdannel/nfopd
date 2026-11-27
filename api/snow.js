@@ -4,6 +4,7 @@
 // The conversion lives in _snow.js. Only these parameters are accepted, so the edge cache keeps one
 // copy per request shape and nobody can force repeat fetches by padding the URL.
 const { computeModels, computeEnsemble, SETS } = require('./_snow');
+const { cached } = require('./_cache');
 
 const num = (s, lo, hi) => { const v = Number(s); return s !== '' && Number.isFinite(v) && v >= lo && v <= hi ? v : null; };
 const list = (s, lo, hi) => { const a = String(s || '').split(',').map(x => num(x, lo, hi)); return a.length && a.every(v => v != null) ? a : null; };
@@ -20,19 +21,22 @@ module.exports = async (req, res) => {
   const lat = list(q.get('lat'), -85, 85), lon = list(q.get('lon'), -180, 180), elev = list(q.get('elev'), -100, 9000);
   if (!lat || !lon || !elev || lat.length !== lon.length || lat.length !== elev.length) return bad('lat, lon and elev must be equal-length lists of numbers');
   try {
-    let out;
+    let hit, ttl;
     if (ens) {
       if (lat.length !== 1) return bad('The ensemble takes one point');
-      out = await computeEnsemble({ lat: lat[0], lon: lon[0], elev: elev[0] });
-      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=3600');
+      ttl = 3600;
+      hit = await cached(`ens|${lat[0]}|${lon[0]}|${elev[0]}`, ttl, () => computeEnsemble({ lat: lat[0], lon: lon[0], elev: elev[0] }));
     } else {
       const set = q.get('set') || 'na', past = num(q.get('past') ?? '7', 0, 16), days = num(q.get('days') ?? '16', 1, 16);
       if (!SETS[set] || past == null || days == null || lat.length > 50) return bad('Bad set, past or days, or more than 50 points');
-      out = await computeModels({ lat, lon, elev, set, past, days });
       // Whole-region batches are heavy upstream and models refresh every few hours; single resorts stay fresher.
-      res.setHeader('Cache-Control', `public, max-age=300, s-maxage=${lat.length > 2 ? 10800 : 1800}, stale-while-revalidate=1800`);
+      ttl = lat.length > 2 ? 10800 : 1800;
+      hit = await cached(`models|${set}|${past}|${days}|${lat}|${lon}|${elev}`, ttl, () => computeModels({ lat, lon, elev, set, past, days }));
     }
-    res.end(JSON.stringify(out));
+    // A stale copy (upstream is rate-limiting or down) is served, but only held at the edge briefly so it refreshes soon.
+    res.setHeader('Cache-Control', hit.stale ? 'public, max-age=60, s-maxage=600' : `public, max-age=300, s-maxage=${Math.max(300, ttl - hit.age)}, stale-while-revalidate=1800`);
+    res.setHeader('X-NFOPD-Cache', hit.stale ? `stale ${hit.age}s` : hit.age ? `hit ${hit.age}s` : 'miss');
+    res.end(JSON.stringify(hit.value));
   } catch (e) {
     res.statusCode = e.status === 429 ? 429 : 502;
     res.setHeader('Cache-Control', 'no-store');

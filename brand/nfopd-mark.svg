@@ -7,9 +7,9 @@
     <rect x="9" y="19.5" width="9" height="2.6" rx="1" fill="#0B1626"/>
     <rect x="9" y="27" width="17" height="3.6" rx="1" fill="#0B1626"/>
     <path d="M0 37 C 10 32, 19 39, 31 34 S 52 29, 64 34 V64 H0 Z" fill="#EEF3F8"/>
-    <g fill="none" stroke="#0B1626" stroke-width="3" stroke-linecap="round">
-      <path d="M33 36 C 25 42, 44 47, 34 54 S 30 62, 38 68"/>
-      <path d="M39.5 35 C 31.5 41, 50.5 46, 40.5 53 S 36.5 61, 44.5 67"/>
+    <g fill="none" stroke="#0B1626" stroke-width="2.4" stroke-linecap="round">
+      <path d="M40 35 C 47.6 38.6, 47.6 41.4, 40 45 S 32.4 51.4, 40 55 S 47.6 61.4, 40 65 S 32.4 71.4, 40 75"/>
+      <path d="M40 35 C 32.4 38.6, 32.4 41.4, 40 45 S 47.6 51.4, 40 55 S 32.4 61.4, 40 65 S 47.6 71.4, 40 75"/>
     </g>
   </g>
 </svg>

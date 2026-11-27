@@ -38,12 +38,37 @@ const TTL = [
 ];
 const ttlFor = (url, type) => type.startsWith('image/') ? 120 : (TTL.find(([re]) => re.test(url))?.[1] ?? 600); // resort reports: 10 min
 const allowed = host => ALLOW.some(d => host === d || host.endsWith('.' + d));
+const { cached } = require('./_cache');
+// Hosts that rate-limit: their JSON goes through the server-side cache, so a 429 serves the last good copy.
+const KEEPS = /(^|\.)(open-meteo\.com|wcc\.sc\.egov\.usda\.gov)$/;
 
 module.exports = async (req, res) => {
   const q = new URL(req.url, 'http://localhost').searchParams;
   let target;
   try { target = new URL(q.get('url') || ''); } catch { res.statusCode = 400; return res.end('Missing or invalid url'); }
   if (!/^https?:$/.test(target.protocol) || !allowed(target.hostname)) { res.statusCode = 403; return res.end('Host not allowed'); }
+  if (KEEPS.test(target.hostname)) {
+    const ttl = ttlFor(target.href, 'application/json');
+    try {
+      const hit = await cached('proxy|' + target.href, ttl, async () => {
+        const r = await fetch(target, { headers: { 'User-Agent': UA, Accept: 'application/json' }, redirect: 'follow' });
+        if (!allowed(new URL(r.url).hostname)) throw Object.assign(new Error('Redirected to a host that is not allowed'), { status: 403 });
+        if (!r.ok) throw Object.assign(new Error(`${r.status} from upstream`), { status: r.status, body: await r.text().catch(() => '') });
+        return { type: r.headers.get('content-type') || 'application/json', body: await r.text() };
+      });
+      res.statusCode = 200;
+      res.setHeader('Content-Type', hit.value.type);
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-NFOPD-Cache', hit.stale ? `stale ${hit.age}s` : hit.age ? `hit ${hit.age}s` : 'miss');
+      res.setHeader('Cache-Control', hit.stale ? 'public, max-age=60, s-maxage=600' : `public, max-age=60, s-maxage=${Math.max(300, ttl - hit.age)}, stale-while-revalidate=1800`);
+      return res.end(hit.value.body);
+    } catch (e) {
+      res.statusCode = e.status || 502;
+      res.setHeader('Cache-Control', 'no-store');
+      return res.end(e.body || 'Upstream request failed: ' + e.message);
+    }
+  }
   try {
     const r = await fetch(target, { headers: { 'User-Agent': UA, Accept: q.get('accept') || '*/*' }, redirect: 'follow' });
     if (!allowed(new URL(r.url).hostname)) { res.statusCode = 403; return res.end('Redirected to a host that is not allowed'); }

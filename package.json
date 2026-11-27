@@ -3,6 +3,7 @@
   "private": true,
   "description": "NFOPD (No Friends On Powder Days) serverless functions",
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.14.0"
+    "@anthropic-ai/sdk": "^1.14.0",
+    "@vercel/functions": "^3.11.4"
   }
 }

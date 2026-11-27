@@ -10,6 +10,9 @@ webcams), so the app works in any browser with no install. Standard library only
 """
 import argparse
 import http.server
+import re
+import threading
+import time
 import ipaddress
 import socket
 import urllib.parse
@@ -26,6 +29,17 @@ SKELETON = (
     "body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>"
     "</head><body>"
 )
+
+
+# Responses from rate-limited hosts are kept in memory: a fresh copy is reused, and when the upstream
+# answers 429 or fails, the last good copy (up to three days old) is served instead of an error.
+CACHE, CACHE_LOCK = {}, threading.Lock()
+CACHE_RULES = [(re.compile(r"archive-api\.open-meteo\.com"), 21600), (re.compile(r"open-meteo\.com"), 1800),
+               (re.compile(r"nfopd\.vercel\.app/api/"), 900), (re.compile(r"wcc\.sc\.egov\.usda\.gov"), 1800)]
+
+
+def cache_ttl(url: str):
+    return next((ttl for rx, ttl in CACHE_RULES if rx.search(url)), None)
 
 
 def public_host(host: str) -> bool:
@@ -68,13 +82,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if parts.scheme not in ("http", "https") or not parts.hostname or not public_host(parts.hostname):
                 return self.send(400, b"Unsupported URL")
             headers = {"User-Agent": UA, "Accept": (q.get("accept") or ["*/*"])[0]}
+            safe = {"Content-Security-Policy": "default-src 'none'; sandbox"}
+            ttl = cache_ttl(target)
+            with CACHE_LOCK:
+                hit = CACHE.get(target) if ttl else None
+            if hit and time.time() - hit[0] < ttl:
+                return self.send(200, hit[1], hit[2], {**safe, "X-NFOPD-Cache": "hit"})
             try:
-                with urllib.request.urlopen(urllib.request.Request(target, headers=headers), timeout=40) as r:
-                    return self.send(r.status, r.read(), r.headers.get("Content-Type", "application/octet-stream"),
-                                     {"Content-Security-Policy": "default-src 'none'; sandbox"})
+                with urllib.request.urlopen(urllib.request.Request(target, headers=headers), timeout=60) as r:
+                    body, ctype = r.read(), r.headers.get("Content-Type", "application/octet-stream")
+                    if ttl and r.status == 200 and len(body) < 8_000_000:
+                        with CACHE_LOCK:
+                            CACHE[target] = (time.time(), body, ctype)
+                            for old in [k for k, v in CACHE.items() if time.time() - v[0] > 3 * 86400]:
+                                del CACHE[old]
+                    return self.send(r.status, body, ctype, safe)
             except urllib.error.HTTPError as e:
+                if hit:
+                    return self.send(200, hit[1], hit[2], {**safe, "X-NFOPD-Cache": "stale"})
                 return self.send(e.code, e.read() or str(e).encode())
             except Exception as e:  # network errors, timeouts
+                if hit:
+                    return self.send(200, hit[1], hit[2], {**safe, "X-NFOPD-Cache": "stale"})
                 return self.send(502, str(e).encode())
         self.send(404, b"Not found")
 
