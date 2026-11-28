@@ -2,7 +2,7 @@
 // The page is always fetched fresh when there's a connection (every deploy shows up at once);
 // the cached copy is only the fallback. Forecast data is not cached here: the app keeps its own
 // copy in the browser and falls back to it for up to three days.
-const V = 'nfopd-shell-v3';
+const V = 'nfopd-shell-v4';
 const SHELL = ['/', '/manifest.webmanifest', '/favicon.ico', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

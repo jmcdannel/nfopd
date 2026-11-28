@@ -227,15 +227,31 @@ select.plain { appearance: none; background: var(--night-2) url("data:image/svg+
 .tl-now::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: repeating-linear-gradient(90deg, var(--blaze) 0 14px, transparent 14px 18px); }
 .tl-now b { font: 800 68px/.92 var(--f-sign); font-variant-numeric: tabular-nums; }
 .tl-now .src { font-size: 12px; line-height: 1.35; color: var(--mute); max-width: 16ch; }
-/* BS meter: the resort's reported snow against the nearest gauge. */
+/* BS meter (the resort's words against what was measured) and the count check (its numbers against the gauge). */
 .bs { display: grid; gap: 14px; max-width: 76ch; }
 .bs-verdict { font: 800 clamp(26px, 4vw, 34px)/1.05 var(--f-sign); margin: 0; }
 .bs-verdict small { display: block; margin-top: 4px; font: 400 15px/1.45 var(--f-text); color: var(--snow-edge); }
-.bs-scale { position: relative; display: grid; grid-template-columns: 15% 25% 25% 35%; margin-top: 12px; }
+.bs-scale { position: relative; display: grid; grid-template-columns: var(--cols, 15% 25% 25% 35%); margin-top: 12px; }
 .bs-scale span { padding-top: 20px; font: 600 12px/1.2 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bs-scale span::before { content: ""; position: absolute; inset: 0 1px auto 0; height: 12px; border-radius: 2px; background: var(--c); }
 .bs-scale span.on { color: var(--snow); }
 .bs-mark { position: absolute; top: -7px; left: var(--x); width: 4px; height: 26px; margin-left: -2px; border-radius: 2px; background: var(--snow); box-shadow: 0 0 0 2px var(--night); }
+.bs-num { margin-left: 12px; font-size: .62em; font-variant-numeric: tabular-nums; color: var(--snow-edge); white-space: nowrap; }
+.bs-num i { font-style: normal; color: var(--mute); }
+.bs-flags { list-style: none; margin: 0; padding: 0; }
+.bs-flags li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) 2.5rem; gap: 4px 16px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--rule); }
+.bs-tag { font: 600 12px/1.4 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
+.bs-said { display: grid; gap: 4px; font-size: 15px; line-height: 1.5; }
+.bs-said q { quotes: "\201C" "\201D"; color: var(--snow); }
+.bs-said mark { background: none; color: inherit; font-weight: 700; text-decoration: underline 2px var(--c); text-underline-offset: 3px; }
+.bs-note { color: var(--snow-edge); }
+.bs-pts { font: 700 17px/1.4 var(--f-sign); font-variant-numeric: tabular-nums; text-align: right; color: var(--snow); }
+.bs-season { margin: 0; font-size: 15px; line-height: 1.5; color: var(--snow-edge); }
+.bs-days { display: flex; flex-wrap: wrap; gap: 3px; }
+.bs-days i { width: 12px; height: 12px; border-radius: 2px; background: var(--c); }
+.bs-tease { margin: 12px 0 0; font-size: 15px; color: var(--snow-edge); }
+.bs-tease b { color: var(--snow); }
+@media (max-width: 560px) { .bs-scale span { font-size: 0; overflow: visible; } .bs-scale span.on { font-size: 12px; } .bs-flags li { grid-template-columns: minmax(0, 1fr) 2.5rem; } .bs-tag { grid-column: 1; grid-row: 1; } .bs-pts { grid-column: 2; grid-row: 1; } .bs-said { grid-column: 1 / -1; } }
 /* Pinpoint map: the forecast point on terrain; a tap moves it. */
 .pinmap:focus-visible::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; z-index: 1000; pointer-events: none; background: linear-gradient(var(--blaze), var(--blaze)) center / 2px 100% no-repeat, linear-gradient(var(--blaze), var(--blaze)) center / 100% 2px no-repeat; }
 .pin-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -576,7 +592,7 @@ const omFor = r => r?.om ? r.om : !r || r.country === 'US' || r.country === 'CA'
 // Resort snow reports and webcams: read from each resort's own website.
 // Each report adapter fetches the resort's page or feed and returns
 // { new24, new48, new7d, overnight, base, summit, season, liftsOpen, liftsTotal, runsOpen, runsTotal, status, conditions, updated, comment }.
-const strip = h => h == null ? null : String(h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#8243;|&Prime;/g, '″').replace(/&amp;/g, '&').replace(/&#8217;|&rsquo;/g, '’').replace(/\n{3,}/g, '\n\n').trim();
+const strip = h => h == null ? null : String(h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&Prime;/g, '″').replace(/&rsquo;/g, '’').replace(/&lsquo;/g, '‘').replace(/&ldquo;/g, '“').replace(/&rdquo;/g, '”').replace(/&ndash;/g, '–').replace(/&mdash;/g, '—').replace(/&hellip;/g, '…').replace(/&deg;/g, '°').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (m, n) => +n > 31 && +n < 0x110000 ? String.fromCodePoint(+n) : m).replace(/&amp;/g, '&').replace(/\n{3,}/g, '\n\n').trim();
 const yt = id => `https://i.ytimg.com/vi/${id}/maxresdefault_live.jpg`;
 const ytw = id => `https://www.youtube.com/watch?v=${id}`;
 // MTNPowder: the feed behind many Alterra and independent resort report pages. The public token comes
@@ -617,7 +633,7 @@ function reportPal(base, name, page) {
     const j = JSON.parse(text), rw = j.currentConditions?.resortwide || {}, loc = j.currentConditions?.resortLocations?.location?.[0] || {}, inch = o => P.num(o?.inches);
     return { overnight: inch(loc.snowOverNight), new24: inch(loc.snow24Hours), new48: inch(loc.snow48Hours), new7d: inch(loc.snow7Days), season: inch(loc.snowSeasonTotal), base: inch(loc.base),
       liftsOpen: P.num(rw.numLiftsOpen), liftsTotal: P.num(rw.numLiftsTotal), runsOpen: P.num(rw.numTrailsOpen), runsTotal: P.num(rw.numTrailsTotal),
-      status: j.operations?.resortStatus || null, updated: j.updated ? fmtTime(j.updated) : null, comment: strip(typeof j.comments === 'string' ? j.comments : j.comments?.comment) };
+      status: j.operations?.resortStatus || null, updated: j.updated ? fmtTime(j.updated) : null, comment: strip(typeof j.comments === 'string' ? j.comments : Array.isArray(j.comments?.comment) ? j.comments.comment.map(c => c?.text).filter(Boolean).join('\n\n') : j.comments?.comment) };
   } };
 }
 // "mc__" report blocks (Snowbasin, the same markup as Sun Valley).
@@ -1207,7 +1223,7 @@ const MEM = new Map();
 const INFLIGHT = new Map();
 // Data this device fetched is also kept in IndexedDB: reused while fresh, and shown (marked stale) when a source is down.
 // Bump CACHE_V whenever a cached data shape changes, so devices drop entries saved by older code.
-const CACHE_V = 'v5:';
+const CACHE_V = 'v6:';
 const Disk = {
   db: null,
   open() {
@@ -1482,8 +1498,8 @@ async function getHourlyModel(r) {
   return memo('hourly:' + r.id, 60 * MIN, async () => {
     const el = [ft2m(r.base), ft2m(r.summit)].map(Math.round).join(',');
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${r.flat},${r.flat}&longitude=${r.flon},${r.flon}&elevation=${el}` +
-      `&hourly=snowfall,precipitation,wet_bulb_temperature_2m,temperature_2m,freezing_level_height,snow_depth&models=gfs_seamless&past_days=7&forecast_days=2&timezone=auto` +
-      `&temperature_unit=fahrenheit&precipitation_unit=inch`;
+      `&hourly=snowfall,precipitation,wet_bulb_temperature_2m,temperature_2m,freezing_level_height,snow_depth,wind_gusts_10m&models=gfs_seamless&past_days=7&forecast_days=2&timezone=auto` +
+      `&temperature_unit=fahrenheit&precipitation_unit=inch&wind_speed_unit=mph`;
     const arr = await Net.json(url);
     const now = Date.now();
     const pick = d => {
@@ -1493,7 +1509,11 @@ async function getHourlyModel(r) {
       const past = hrs => round(sum(adj.filter((_, i) => t[i] <= now && t[i] > now - hrs * H)), 2);
       const next = hrs => round(sum(adj.filter((_, i) => t[i] > now && t[i] <= now + hrs * H)), 2);
       let iNow = t.findIndex(x => x > now) - 1; if (iNow < 0) iNow = 0;
-      return { p24: past(24), p72: past(72), p7d: past(168), n24: next(24), depth: h.snow_depth[iNow] != null ? round(h.snow_depth[iNow] * 12, 0) : null,
+      // The last 24 hours as the BS meter needs them: liquid that fell as rain (only hours at 34°F or warmer, so a 32°F mix isn't called rain), the temperature range and the strongest gust.
+      const day = t.map((x, i) => x <= now && x > now - 24 * H ? i : -1).filter(i => i >= 0), of = k => day.map(i => h[k]?.[i]).filter(v => v != null);
+      const temps = of('temperature_2m'), gusts = of('wind_gusts_10m');
+      const rain24 = h.precipitation ? round(sum(day.map(i => h.temperature_2m[i] >= 34 ? (h.precipitation[i] || 0) * (1 - snowFraction(h.wet_bulb_temperature_2m?.[i], h.temperature_2m[i])) : 0)), 2) : null;
+      return { p24: past(24), p72: past(72), p7d: past(168), n24: next(24), rain24, hi24: temps.length ? Math.round(Math.max(...temps)) : null, lo24: temps.length ? Math.round(Math.min(...temps)) : null, gust24: gusts.length ? Math.round(Math.max(...gusts)) : null, depth: h.snow_depth[iNow] != null ? round(h.snow_depth[iNow] * 12, 0) : null,
         fzl: h.freezing_level_height[iNow] != null ? Math.round(h.freezing_level_height[iNow]) : null, temp: round(h.temperature_2m[iNow], 0) };
     };
     return { base: pick(arr[0]), summit: pick(arr[1]) };
@@ -2452,7 +2472,7 @@ function drawRank() {
 // ---------------------------------------------------------------- Resort page
 // One long page per resort. The sticky section nav jumps to a section and lights up as you scroll;
 // each section loads its data when it comes near the viewport.
-const SECTION_TITLE = { summary: 'This morning', forecast: 'Snow forecast', accuracy: 'Forecast accuracy', noaa: 'NOAA 7-day', report: 'Snow report', cams: 'Webcams', discussion: 'Discussions' };
+const SECTION_TITLE = { summary: 'This morning', forecast: 'Snow forecast', accuracy: 'Accuracy report', noaa: 'NOAA 7-day', report: 'Snow report', cams: 'Webcams', discussion: 'Discussions' };
 const NAV_LABEL = { summary: 'Summary', forecast: 'Forecast', accuracy: 'Accuracy', noaa: 'NOAA 7-Day', report: 'Report', cams: 'Cams', discussion: 'Discussions' };
 let spy = null, lazy = null;
 const tabsFor = r => r.spot ? TABS.filter(t => t !== 'report' && t !== 'cams') : TABS;
@@ -2613,8 +2633,24 @@ function drawForecast(r, models, grid, elev, ens) {
   if (!grid) logForecast(r, days);
 }
 function tabAccuracy(el, r) {
-  el.innerHTML = `${slot('a-5', 'Last 5 days: forecast vs what fell', 'NFOPD blend vs the nearest SNOTEL gauge')}${slot('f-acc', 'Last 30 days', 'Storm days caught and bias, by model and lead time')}`;
+  const a = r.spot ? null : reportFor(r), how = `<a href="https://nfopd.vercel.app/methods#bs-meter" target="_blank" rel="noopener">how it works</a>`;
+  el.innerHTML = `${a ? slot('a-bs', 'BS meter', `${esc(r.name)}'s written report against what was measured · ${how}`) : ''}
+    ${a && hasSnotel(r) ? slot('a-count', "The resort's snow count", 'Reported new snow against the nearest gauge') : ''}
+    ${slot('a-5', 'NFOPD, last 5 days: forecast vs what fell', 'NFOPD blend vs the nearest SNOTEL gauge')}${slot('f-acc', 'NFOPD, last 30 days', 'Storm days caught and bias, by model and lead time')}`;
   accuracyPanel(r);
+  if (a) resortPanel(r);
+}
+// The resort's side of the ledger: its words (BS meter) and its numbers (count check).
+async function resortPanel(r) {
+  const weather = getHourlyModel(r).catch(() => null);
+  const [rep, sn, first] = await Promise.all([getReport(r).catch(() => null), hasSnotel(r) ? getSnotel(r).catch(() => null) : null, Promise.race([weather, sleep(6000).then(() => undefined)])]);
+  const draw = hm => {
+    if ($('#main').dataset.resort !== r.id) return;
+    fill('a-bs', bsHtml(r, rep, sn, hm));
+    if (hasSnotel(r)) fill('a-count', countHtml(r, rep, sn, hm));
+  };
+  draw(first || null);
+  if (first === undefined) weather.then(hm => hm && draw(hm));
 }
 async function accuracyPanel(r) {
   let v;
@@ -2708,7 +2744,6 @@ async function tabEccc(el, r) {
 async function tabReport(el, r) {
   const a = reportFor(r);
   el.innerHTML = `${slot('r-report', a?.agg ? 'Resort-submitted report' : 'From the resort', a ? `From <a href="${esc(httpsUrl(a.page) || r.site)}" target="_blank" rel="noopener">${esc(host(a.page || r.site))} ${ICON.out}</a>` : '')}
-    ${a && hasSnotel(r) ? slot('r-bs', 'BS meter', `Reported snow against the nearest gauge · <a href="https://nfopd.vercel.app/methods#bs-meter" target="_blank" rel="noopener">how it works</a>`) : ''}
     ${hasSnotel(r) ? slot('r-snotel', 'Nearest SNOTEL station', 'USDA NRCS, observed') : ''}
     ${slot('r-season', 'Season so far', 'Reanalysis via Open-Meteo' + (hasSnotel(r) ? ' · SNOTEL median' : ''))}`;
   getSeason(r).then(x => fill('r-season', seasonHtml(x)), e => fill('r-season', errBox('Season history', e)));
@@ -2723,13 +2758,17 @@ async function tabReport(el, r) {
       fill('r-report', `<div class="controls">${x.status ? `<span class="pill ${open ? 'good' : 'mute'}">${esc(x.status)}</span>` : ''}${x.updated ? `<span class="mute small">Updated ${esc(x.updated)}</span>` : ''}${x.via ? `<span class="mute small">via ${esc(x.via)}</span>` : ''}</div>
         <div class="report-grid">${kv('Overnight', x.overnight)}${kv('24 hours', x.new24)}${kv('48 hours', x.new48)}${kv('7 days', x.new7d)}${kv('Base depth', x.base)}${kv('Summit depth', x.summit)}${kv('Season total', x.season)}
         ${x.liftsOpen != null ? kv('Lifts open', `${x.liftsOpen}${x.liftsTotal ? ' / ' + x.liftsTotal : ''}`) : ''}${x.runsOpen != null ? kv('Runs open', `${x.runsOpen}${x.runsTotal ? ' / ' + x.runsTotal : ''}`) : ''}${kv('Surface', x.conditions)}</div>
-        ${x.comment ? `<h3>From the mountain</h3><p class="comment">${esc(x.comment.replace(/[ \t]{2,}/g, ' '))}</p>` : ''}`);
+        ${x.comment ? `<h3>From the mountain</h3><p class="comment">${esc(x.comment.replace(/[ \t]{2,}/g, ' '))}</p>` : ''}<p class="bs-tease" id="r-bs-tease" hidden></p>`);
     }
   }
   const s = sn.value;
-  if (a && hasSnotel(r)) {
-    const draw = hm => fill('r-bs', bsHtml(r, rep.value, s, hm));
-    draw(null); getHourlyModel(r).then(draw, () => {});
+  if (a && rep.value) {
+    const tease = hm => {
+      const el = $('#r-bs-tease'), j = bsJudge(r, rep.value, bsFacts(s, hm));
+      if (!el || $('#main').dataset.resort !== r.id || j.score == null) return;
+      el.innerHTML = `BS meter: <b>${esc(BS_BANDS[j.band][1])}</b>, ${j.score} out of 100. <a href="#${esc(r.id)}-accuracy">See the receipts</a>`; el.hidden = false;
+    };
+    getHourlyModel(r).then(tease, () => tease(null));
   }
   fill('r-snotel', s ? `<div class="report-grid"><div class="kv"><span class="k">Snow depth</span><span class="v">${fmtIn(s.depth)}"</span></div><div class="kv"><span class="k">24h depth gain</span><span class="v">${fmtIn(s.new24)}"</span></div><div class="kv"><span class="k">Snow water</span><span class="v">${fmtIn(s.swe)}"</span></div><div class="kv"><span class="k">24h water gain</span><span class="v">${fmtIn(s.swe24)}"</span></div></div>
     <p class="mute small" style="margin:0">${esc(s.station.name)} (${esc(s.station.triplet)}), ${fmtFt(s.station.elev)} ft, ${s.station.km} km from the resort · reading ${esc(s.time)} local standard time · <a href="https://wcc.sc.egov.usda.gov/nwcc/site?sitenum=${esc(s.station.triplet.split(':')[0])}" target="_blank" rel="noopener">station page</a></p>
@@ -2776,13 +2815,13 @@ function seasonHtml(x) {
     <p class="mute small" style="margin:0">Since ${esc(dayLabel(x.start).md)}, upper mountain. Modeled from the ERA5 and ECMWF reanalysis, hour by hour at this elevation, so treat it as an estimate, not a measurement.${x.med ? ` Snowpack: ${esc(x.med.station)} SNOTEL holds ${fmtIn(x.med.swe)}" of water against a 30-year median of ${fmtIn(x.med.median)}" for this date.` : ''}</p>`;
 }
 
-// The BS meter. Resorts measure their own snow, on their own stake, and a generous count sells tickets. This holds the
+// The count check. Resorts measure their own snow, on their own stake, and a generous count sells tickets. This holds the
 // resort's reported new snow up against what the nearest SNOTEL gauge measured over the same window.
 // A gauge reads settled snow (roughly 10–25% under a snow-board count) at a different spot, so up to 1.3× counts as honest.
 // Depth alone undercounts long storms (the pack settles while it snows), so the gauge's water gain × 10 is used when it is larger.
 // Until three snow days are logged the verdict is an "early read", and a gauge more than 8 km away is called out.
-const BS_BANDS = [[0.8, 'Under-reports', 'var(--ice)'], [1.3, 'Straight shooter', 'var(--snow-edge)'], [1.8, 'Generous', 'var(--lamp)'], [Infinity, 'Sugar-coated', 'var(--blaze)']];
-function bsRead(r, rep, sn) {
+const COUNT_BANDS = [[0.8, 'Under-reports', 'var(--ice)'], [1.3, 'Straight shooter', 'var(--snow-edge)'], [1.8, 'Generous', 'var(--lamp)'], [Infinity, 'Sugar-coated', 'var(--blaze)']];
+function countRead(r, rep, sn) {
   if (!rep || !sn) return null;
   const rises = key => { const a = (sn.daily || []).map(d => d[key]).filter(v => v != null); return n => a.length > n ? sum(a.slice(-n - 1).map((v, i, arr) => i ? Math.max(0, v - arr[i - 1]) : 0)) : null; };
   const depth = rises('depth'), water = rises('swe');
@@ -2798,20 +2837,139 @@ function bsRead(r, rep, sn) {
   let ratio = null, basis = null, early = true;
   if (snowDays.length >= 3) { ratio = sum(snowDays.map(x => x.r)) / Math.max(1, sum(snowDays.map(x => x.m))); basis = `${snowDays.length} snow days logged on this device since ${dayLabel(snowDays[0].d).md}`; early = false; }
   else { const w = [...windows].reverse().find(x => x.counts); if (w) { ratio = w.said / Math.max(1, w.got); basis = `the ${w.label.toLowerCase()} only`; } }
-  return { windows, ratio, basis, early, far: sn.station.km > 8, band: ratio == null ? null : BS_BANDS.findIndex(b => ratio < b[0]) };
+  return { windows, ratio, basis, early, far: sn.station.km > 8, band: ratio == null ? null : COUNT_BANDS.findIndex(b => ratio < b[0]) };
 }
-function bsHtml(r, rep, sn, hm) {
-  const b = bsRead(r, rep, sn);
-  if (!b) return `<p class="empty">The BS meter needs both a resort report and a SNOTEL gauge within 45 km. ${!rep ? 'The report did not load.' : 'No gauge reading right now.'}</p>`;
+function countHtml(r, rep, sn, hm) {
+  const b = countRead(r, rep, sn);
+  if (!b) return `<p class="empty">The count check needs both a resort report and a SNOTEL gauge within 45 km. ${!rep ? 'The report did not load.' : 'No gauge reading right now.'}</p>`;
   const x = b.ratio == null ? null : Math.round((Math.max(0.5, Math.min(2.5, b.ratio)) - 0.5) / 2 * 100);
-  const verdict = b.band == null ? 'Not enough new snow to judge' : (b.early ? 'Early read: ' : '') + BS_BANDS[b.band][1];
+  const verdict = b.band == null ? 'Not enough new snow to judge' : (b.early ? 'Early read: ' : '') + COUNT_BANDS[b.band][1];
   const line = b.ratio == null ? `Neither ${esc(r.name)} nor the gauge has 2" or more in any window yet. Check back after a storm.`
     : `${esc(r.name)} reports ${b.ratio >= 1.05 ? `${Math.round((b.ratio - 1) * 100)}% more` : b.ratio <= 0.95 ? `${Math.round((1 - b.ratio) * 100)}% less` : 'about the same'} snow ${b.ratio >= 1.05 || b.ratio <= 0.95 ? 'than' : 'as'} the gauge measured, going by ${esc(b.basis)}.${b.early ? ' One window is a small sample; this firms up after three logged snow days.' : ''}${b.far ? ` The gauge is ${sn.station.km} km away, so treat this as a rough read.` : ''}`;
   return `<div class="bs">
     <p class="bs-verdict">${esc(verdict)}<small>${line}</small></p>
-    <div class="bs-scale" role="img" aria-label="${esc(verdict)}${b.ratio != null ? `: reported snow is ${b.ratio.toFixed(1)} times the measured snow` : ''}">${BS_BANDS.map((band, i) => `<span class="${i === b.band ? 'on' : ''}" style="--c:${band[2]}">${band[1]}</span>`).join('')}${x != null ? `<i class="bs-mark" style="--x:${x}%"></i>` : ''}</div>
+    <div class="bs-scale" role="img" aria-label="${esc(verdict)}${b.ratio != null ? `: reported snow is ${b.ratio.toFixed(1)} times the measured snow` : ''}">${COUNT_BANDS.map((band, i) => `<span class="${i === b.band ? 'on' : ''}" style="--c:${band[2]}">${band[1]}</span>`).join('')}${x != null ? `<i class="bs-mark" style="--x:${x}%"></i>` : ''}</div>
     ${b.windows.length ? `<div class="table-scroll"><table><thead><tr><th>Window</th><th>Resort says</th><th>Gauge depth gain</th><th>Gauge water gain</th><th>Model estimate</th></tr></thead><tbody>${b.windows.map(w => `<tr><td>${w.label}</td><td>${fmtIn(w.said)}"</td><td>${w.depth != null ? fmtIn(w.depth) + '"' : '–'}</td><td>${w.water != null ? fmtIn(w.water) + '"' : '–'}</td><td>${hm && w.key && hm.summit[w.key] != null ? fmtIn(hm.summit[w.key]) + '"' : '–'}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <p class="mute small" style="margin:0">Gauge: ${esc(sn.station.name)} SNOTEL, ${fmtFt(sn.station.elev)} ft, ${sn.station.km} km away. The gauge's snow is taken as the larger of its depth gain and ten times its water gain, because the pack settles while it snows. It still reads lower than a fresh count on the upper mountain, so up to 30% more than the gauge is scored as straight.${rep.via ? ` Report via ${esc(rep.via)}.` : ''}</p>
+  </div>`;
+}
+
+// The BS meter. It reads what the resort wrote (the written report and the surface description), not what it counted;
+// the count is checked against the gauge by countHtml, above. The words are marked against what was measured:
+// new snow (the larger of the SNOTEL gauge and the model's summit estimate), rain, temperature and gusts.
+// Three things score, harshly: hype the snow didn't earn, soft words for something bad, and bad weather left out.
+// Plain talk about bad conditions earns some of it back. Sentences about the future are not judged.
+const BS_BANDS = [[15, 'Straight talk', 'var(--ice)'], [40, 'Marketing gloss', 'var(--snow-edge)'], [70, 'Sugar-coated', 'var(--lamp)'], [101, 'Full BS', 'var(--blaze)']];
+const BS_KIND = { omit: ['Left out', 'var(--blaze)'], hype: ['Unearned hype', 'var(--blaze)'], soft: ['Soft-pedalled', 'var(--lamp)'], earned: ['Earned', 'var(--snow-edge)'], straight: ['Straight talk', 'var(--ice)'] };
+const BS_HYPE = [
+  [3, /\b(epic|all[- ]time|legendary|unreal|insane|world[- ]class|bottomless|blower|best (?:day|snow|skiing|riding|conditions|turns) of the (?:season|year|winter)|deep(?:est)? (?:day|powder|pow|turns))\b/gi],
+  [2, /\b(amazing|incredible|fantastic|phenomenal|spectacular|stellar|superb|perfect|dreamy|magical|outstanding|excellent|awesome|primo|glorious|pristine|heavenly|winter wonderland|unbelievable|sensational|powder day|pow day|face ?shots?)\b/gi],
+  [1, /\b(great|fresh|soft|beautiful|gorgeous|hero snow|buttery|creamy|fluffy|plush|delightful|ideal|good (?:skiing|riding|turns|coverage|conditions|snow)|powder|pow|freshies|stoked?)\b/gi],
+];
+// Guards: talk about the future, a lift or run that happens to be called "Bluebird", praise for something that isn't snow, and "not great".
+const BS_FUTURE = /\b(forecast\w*|expect\w*|will|we['’]ll|tomorrow|tonight|coming|on the way|on tap|ahead|looking forward|stay tuned|hop(?:e|es|ing|ed)|soon|next (?:week|weekend|storm)|this weekend|plan\w*|anticipat\w+|should|could|might|upcoming|potential|chance|outlook)\b/i;
+const BS_PRESEASON = /\b(closed for the season|opening (?:day|date)\b(?! is here)|scheduled to open|not (?:yet )?open|more snow to open|opens? (?:on |in )?(?:nov|dec|jan)\w*|opening soon|stay tuned|see you (?:next|this) (?:season|winter)|closer to winter)\b/i;
+const BS_LATER = /\b(tomorrow|tonight|next (?:week|weekend|storm)|this weekend|later this week|upcoming|soon)\b/i;
+const BS_NAME = /^\s+(?:express|chair\w*|lift|quad|triple|double|six[- ]?pack|gondola|tram|run|trail|bowl|lodge|park|ridge|basin|mountain|peak|caf[eé]|bar|grill|room|shop|king|horn)\b/i;
+const BS_NOT_SNOW = /^\s+(?:\w+\s+)?(?:corduroy|cord|groom\w*|deals?|food|music|time|times|way|job|start|opening|pass(?:es)?|prices?|savings|gifts?|lessons?|views?|people|team|crew|staff|work|thanks|holiday\w*|thanksgiving|weekend|event\w*|opportunit\w+|place|spot|option\w*|season|year)\b/i;
+const BS_NEG = /\b(?:no|not|isn['’]?t|aren['’]?t|wasn['’]?t|without|lack\w*|need(?:s|ed)?|waiting (?:for|on)|until)\s+(?:\w+\s+){0,2}$/i;
+// Soft words for something bad: [phrase, what the measurements say (or null when the phrase is fair), points].
+const BS_SOFT = [
+  [/\bpacked powder\b/i, f => f.new72 != null && f.new72 < 2 ? `With ${f.new72 < 0.5 ? 'no new snow' : `${fmtIn(f.new72)}" of new snow`} in three days, “packed powder” is groomed hardpack.` : null, 2],
+  [/\bspring(?:[- ]like)?(?: skiing| snow)? conditions\b|\bspring skiing\b/i, f => [10, 11, 0, 1].includes(f.month) ? `“Spring conditions” in ${f.monthName} means it thawed${f.rainBase >= 0.1 ? ' and rained' : ''}.` : null, 2],
+  [/\b(?:showers?|moisture|mixed precip\w*|wintry mix|unsettled weather)\b/i, (f, text) => f.rainBase >= 0.1 && !/\brain/i.test(text) ? `The weather model has that as rain: about ${fmtWater(f.rainBase)}" at the base${f.rainTop >= 0.1 ? ', and rain at the summit too' : ''}.` : null, 2],
+  [/\b(?:breezy|blustery|a bit windy|some wind|light winds?)\b/i, f => f.gust >= 40 ? `The weather model has gusts to ${f.gust} mph on the upper mountain.` : null, 1],
+  [/\bfirm(?: and fast)?\b|\bfast and firm\b/i, (f, text) => f.hiBase >= 36 && f.loBase != null && f.loBase <= 30 && f.new24 < 1 && !/\bic[ey]\b/i.test(text) ? `“Firm” after ${f.hiBase}°F and a refreeze to ${f.loBase}°F means ice.` : null, 1],
+];
+// Bad weather the write-up never mentions: [it happened, words that would count as a mention, the receipt, points].
+const BS_OMIT = [
+  [f => f.rainBase >= 0.1, /\b(?:rain\w*|showers?|drizzl\w*|wet|mixed|moist\w*|damp|soggy|precip\w*)\b/i, f => `The weather model has about ${fmtWater(f.rainBase)}" of rain at the base in the last 24 hours${f.rainTop >= 0.1 ? ', and rain at the summit too' : ''}. The report doesn't mention it.`, f => f.rainTop >= 0.1 ? 4 : 3],
+  [f => f.gust >= 45, /\b(?:wind\w*|gust\w*|breez\w*|blust\w*|hold)\b/i, f => `The weather model has gusts to ${f.gust} mph on the upper mountain. The report doesn't mention wind.`, () => 2],
+  [f => f.hiBase >= 40 && f.new24 < 1, /\b(?:warm\w*|mild|spring\w*|slush\w*|melt\w*|thaw\w*|soft\w*|wet|rain\w*|above freezing)\b|\d{2}\s?(?:º|°|degrees)/i, f => `The weather model has ${f.hiBase}°F at the base with no new snow. The report says nothing about warmth or soft snow.`, () => 1],
+];
+const BS_STRAIGHT = /\b(rain(?:ed|ing|y)?|icy|hard[- ]?pack(?:ed)?|crust\w*|slush\w*|thin(?: cover\w*)?|rocks?|obstacles|bare spots?|limited|wind hold|high winds?|gusty|unmarked hazards?|marginal|wet|sticky|firm|variable(?! winds?)|early[- ]season|low[- ]tide|scratchy|boilerplate|refrozen|challenging|hazards?|caution)\b/gi;
+// What was measured, for the words to be marked against.
+function bsFacts(sn, hm) {
+  const now = new Date(), top = hm?.summit, base = hm?.base;
+  const rises = (key, n) => { const a = (sn?.daily || []).map(d => d[key]).filter(v => v != null); return a.length > n ? sum(a.slice(-n - 1).map((v, i, arr) => i ? Math.max(0, v - arr[i - 1]) : 0)) : null; };
+  const most = (...v) => { const a = v.filter(x => x != null); return a.length ? Math.max(...a) : null; };
+  const rainTop = top?.rain24 ?? null, wet = rainTop >= 0.1;
+  // Gauge snow: the depth gain, or ten times the water gain when that is larger (the pack settles while it snows) and no rain soaked the pillow.
+  const gauge24 = sn ? most(sn.new24, !wet && sn.swe24 > 0 ? sn.swe24 * 10 : null) : null;
+  const gauge72 = sn ? most(rises('depth', 3), wet ? null : (rises('swe', 3) ?? 0) * 10) : null;
+  const new24 = most(gauge24, top?.p24);
+  return { new24, new72: most(gauge72, top?.p72, new24), gauge24, model24: top?.p24 ?? null, rainBase: base?.rain24 ?? null, rainTop,
+    hiBase: base?.hi24 ?? null, loBase: base?.lo24 ?? null, gust: top?.gust24 ?? null, month: now.getMonth(), monthName: now.toLocaleDateString('en-US', { month: 'long' }) };
+}
+function bsJudge(r, rep, f) {
+  const prose = (rep.comment || '').replace(/[ \t]{2,}/g, ' ').trim(), surface = (rep.conditions || '').trim();
+  const text = [surface && `Surface: ${surface}.`, prose].filter(Boolean).join('\n');
+  if (!text) return { why: 'none' };
+  // No lifts turning could just be 7 am, so the write-up has to sound pre-season too before it's skipped as closed.
+  const idle = rep.liftsOpen === 0 || (rep.status && /clos/i.test(rep.status) && !/\bopen\b/i.test(rep.status));
+  if (/not reporting/i.test(rep.status || '') || (idle && BS_PRESEASON.test(prose))) return { why: 'closed' };
+  if (f.new24 == null) return { why: 'facts' };
+  const quote = (s, i, len) => { const a = Math.max(0, i - 70), b = Math.min(s.length, i + len + 70); return `${a ? '…' : ''}${esc(s.slice(a, i))}<mark>${esc(s.slice(i, i + len))}</mark>${esc(s.slice(i + len, b))}${b < s.length ? '…' : ''}`; };
+  const blank = m => ' '.repeat(m.length), nameRe = new RegExp(r.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  const flags = [], hypes = [], seen = new Set(), softHit = new Set();
+  for (const raw of text.match(/(?:[^.!?\n]|\.(?=\d))+[.!?]*/g) || []) {
+    const s = raw.trim(); if (!s) continue;
+    if (!BS_LATER.test(s)) BS_SOFT.forEach(([re, test, pts], k) => {
+      const m = s.match(re); if (!m || softHit.has(k)) return;
+      const note = test(f, text); if (note) { softHit.add(k); flags.push({ kind: 'soft', q: quote(s, m.index, m[0].length), note, pts, word: m[0].toLowerCase() }); }
+    });
+    if (BS_FUTURE.test(s)) continue;
+    const work = s.replace(nameRe, blank).replace(/packed powder/gi, blank), used = [];
+    for (const [w, re] of BS_HYPE) for (const m of work.matchAll(re)) {
+      const key = m[0].toLowerCase(), end = m.index + m[0].length;
+      if (seen.has(key) || used.some(([a, b]) => m.index < b && end > a)) continue;
+      if (BS_NAME.test(work.slice(end)) || BS_NOT_SNOW.test(work.slice(end)) || BS_NEG.test(work.slice(0, m.index))) continue;
+      seen.add(key); used.push([m.index, end]); hypes.push({ q: quote(s, m.index, m[0].length), w });
+    }
+  }
+  if (prose.length >= 80) for (const [happened, mention, note, pts] of BS_OMIT) if (happened(f) && !mention.test(text)) flags.push({ kind: 'omit', note: note(f), pts: pts(f) });
+  // Hype the conditions earned: one free superlative, more for measured snow, less for rain, a thaw or wind.
+  const snowPts = f.new24 >= 8 ? 6 : f.new24 >= 5 ? 4 : f.new24 >= 3 ? 3 : f.new24 >= 1 ? 2 : f.new72 >= 6 ? 2 : f.new72 >= 3 ? 1 : 0;
+  const drag = (f.rainBase >= 0.1 ? 2 : 0) + (f.hiBase >= 40 && f.new24 < 1 ? 1 : 0) + (f.gust >= 45 ? 1 : 0);
+  const earned = Math.max(0, 1 + snowPts - drag), used = Math.min(8, sum(hypes.map(h => h.w))), unearned = Math.max(0, used - earned);
+  hypes.forEach(h => flags.push({ kind: unearned ? 'hype' : 'earned', q: h.q, pts: unearned ? h.w : 0 }));
+  if (unearned && Math.min(used, earned)) flags.push({ kind: 'earned', note: snowPts ? `New snow (${fmtIn(f.new24)}" in 24 hours, ${fmtIn(f.new72)}" in 3 days) earned ${Math.min(used, earned)} of those points.` : 'Every report gets one superlative free.', pts: -Math.min(used, earned) });
+  const softWords = flags.filter(x => x.kind === 'soft').map(x => x.word);
+  const plain = [...new Set((text.match(BS_STRAIGHT) || []).map(w => w.toLowerCase().replace(/-/g, ' ').replace(/^(rock|hazard|obstacle)$/, '$1s')))].filter(w => !softWords.some(sw => sw.includes(w)));
+  const raw = unearned + sum(flags.filter(x => x.kind === 'soft' || x.kind === 'omit').map(x => x.pts));
+  const credit = Math.min(plain.length, 4, Math.floor(raw / 2));
+  if (plain.length) flags.push({ kind: 'straight', note: `Said plainly: ${plain.slice(0, 6).map(w => `“${w}”`).join(', ')}.`, pts: -credit });
+  const score = Math.max(0, Math.min(100, Math.round((raw - credit) * 10)));
+  const order = Object.keys(BS_KIND);
+  return { score, band: BS_BANDS.findIndex(b => score < b[0]), flags: flags.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)), unearned, earned, used,
+    counts: { hype: unearned ? hypes.length : 0, soft: softHit.size, omit: flags.filter(x => x.kind === 'omit').length } };
+}
+// One reading a day is kept on this device, because a habit only shows over a season.
+function bsLog(r, j) {
+  const today = dayKey(Date.now()), log = (store.get('bsw:' + r.id, []) || []).filter(x => x.d !== today);
+  log.push({ d: today, s: j.score });
+  store.set('bsw:' + r.id, log.slice(-200));
+  return log;
+}
+const bsWords = (n, one, many) => `${['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][n] || n} ${n === 1 ? one : many}`;
+function bsHtml(r, rep, sn, hm) {
+  if (!rep) return `<p class="empty">The BS meter reads ${esc(r.name)}'s written report, and it did not load.</p>`;
+  const f = bsFacts(sn, hm), j = bsJudge(r, rep, f);
+  if (j.why === 'none') return `<p class="empty">${esc(r.name)}'s report has numbers but no written description today, so there are no words to judge.</p>`;
+  if (j.why === 'closed') return `<p class="empty">${esc(r.name)} isn't open, so there are no conditions to oversell. The meter starts reading when the lifts turn.</p>`;
+  if (j.why === 'facts') return `<p class="empty">No snow or weather measurements loaded to check the write-up against. Refresh to try again.</p>`;
+  const log = hm ? bsLog(r, j) : store.get('bsw:' + r.id, []) || [], c = j.counts, parts = [c.omit && bsWords(c.omit, 'thing left out', 'things left out'), c.hype && bsWords(c.hype, "hype word the snow didn't earn", "hype words the snow didn't earn"), c.soft && bsWords(c.soft, 'soft-pedalled phrase', 'soft-pedalled phrases')].filter(Boolean);
+  const line = parts.length ? parts.map((p, i) => i ? p.toLowerCase() : p).join(parts.length > 2 ? ', ' : ' and ').replace(/, ([^,]*)$/, ' and $1') + '.' : "Nothing in today's write-up oversells what was measured.";
+  const kv = (k, v) => v == null ? '' : `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`, unit = u => `<small class="mute" style="font-size:15px"> ${u}</small>`;
+  const avg = Math.round(sum(log.map(x => x.s)) / Math.max(1, log.length)), bandOf = s => BS_BANDS[BS_BANDS.findIndex(b => s < b[0])];
+  return `<div class="bs">
+    <p class="bs-verdict">${esc(BS_BANDS[j.band][1])}<span class="bs-num">${j.score}<i>/100</i></span><small>${esc(line)}</small></p>
+    <div class="bs-scale" style="--cols:15% 25% 30% 30%" role="img" aria-label="BS meter: ${j.score} out of 100, ${esc(BS_BANDS[j.band][1])}">${BS_BANDS.map((band, i) => `<span class="${i === j.band ? 'on' : ''}" style="--c:${band[2]}">${band[1]}</span>`).join('')}<i class="bs-mark" style="--x:${Math.max(1, Math.min(99, j.score))}%"></i></div>
+    ${j.flags.length ? `<ul class="bs-flags">${j.flags.map(x => `<li style="--c:${BS_KIND[x.kind][1]}"><span class="bs-tag">${BS_KIND[x.kind][0]}</span><span class="bs-said">${x.q ? `<q>${x.q}</q>` : ''}${x.note ? `<span class="bs-note">${esc(x.note)}</span>` : ''}</span><b class="bs-pts">${x.pts > 0 ? '+' + x.pts : x.pts < 0 ? '−' + -x.pts : '0'}</b></li>`).join('')}</ul>` : ''}
+    <div class="report-grid">${kv('New snow, 24 hours', `${fmtIn(f.new24)}"`)}${kv('New snow, 3 days', f.new72 == null ? null : `${fmtIn(f.new72)}"`)}${kv('Rain at the base', f.rainBase == null ? null : `${fmtWater(f.rainBase)}"`)}${kv('Base high and low', f.hiBase == null ? null : `${f.hiBase}° / ${f.loBase}°`)}${kv('Top gust', f.gust == null ? null : `${f.gust}${unit('mph')}`)}</div>
+    <p class="bs-season">${log.length < 2 ? (log.length ? 'This is the first report read on this device.' : '') : `Averaging <b>${avg}</b> (${esc(bandOf(avg)[1].toLowerCase())}) over ${log.length} reports read on this device since ${esc(dayLabel(log[0].d).md)}.`}${log.length < 5 ? ' A habit takes a season to show, and early-season reports have little to oversell. The record adds a day each time this page is opened.' : ''}</p>
+    ${log.length > 1 ? `<div class="bs-days" role="img" aria-label="Daily BS scores, oldest first: ${log.slice(-60).map(x => x.s).join(', ')}">${log.slice(-60).map(x => `<i style="--c:${bandOf(x.s)[2]}" title="${esc(dayLabel(x.d).md)}: ${x.s}, ${esc(bandOf(x.s)[1])}"></i>`).join('')}</div>` : ''}
+    <p class="mute small" style="margin:0">Each point is 10 on the scale. New snow is ${sn && hm ? `the larger of the ${esc(sn.station.name)} SNOTEL gauge (${sn.station.km} km away) and the model's estimate for the summit` : sn ? `from the ${esc(sn.station.name)} SNOTEL gauge (${sn.station.km} km away)` : "the model's estimate for the summit"}. ${hm ? 'Rain, temperature and gusts are the GFS model at the resort over the last 24 hours.' : 'The weather check did not load, so rain, warmth and wind were not scored and today is not added to the record.'} Sentences about the forecast aren't judged. A program reads the words, so it can miss sarcasm or a run named Powder Keg.</p>
   </div>`;
 }
 
@@ -3011,7 +3169,7 @@ window.NFOPD = {
     const r = await fetch('/snapshot', { method: 'POST', body, headers: { 'X-NFOPD': '1', 'Content-Type': 'application/json' } });
     return `${r.status} ${await r.text()} · ${(body.length / 1e6).toFixed(2)} MB`;
   },
-  REPORTS, CAMS, Net, MEM, RESORTS, AGG,
+  REPORTS, CAMS, Net, MEM, RESORTS, AGG, bsJudge, bsFacts,
 };
 boot();
 })();

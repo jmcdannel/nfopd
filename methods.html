@@ -71,7 +71,7 @@ table { border-collapse: collapse; width: 100%; font-size: 15px; }
 th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
 thead th { border-top: 2px solid var(--rule); padding-top: 12px; font: 700 14px/1.2 var(--f-sign); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 tbody th { font-weight: 600; }
-.t-ev th:first-child { width: 46%; } .t-ratio th, .t-ratio td { padding-right: 6px; } .t-hours { min-width: 560px; }
+.t-ev th:first-child { width: 46%; } .t-ratio th, .t-ratio td { padding-right: 6px; } .t-hours { min-width: 560px; } .t-bs { min-width: 560px; } .t-bs th:first-child { width: 22%; } .t-bs td:last-child { white-space: nowrap; }
 tfoot td, tfoot th { font-weight: 700; border-bottom: 0; }
 details { max-width: 760px; }
 summary { cursor: pointer; color: var(--powder); padding: 6px 0; font-size: 15px; }
@@ -106,7 +106,7 @@ details .table-wrap { margin-top: 8px; }
       <li><b>Liquid becomes snow hour by hour.</b> Each hour's liquid precipitation is multiplied by the share falling as snow and by a snow ratio that tops out at 10 inches of snow per inch of water.</li>
       <li><b>No single model runs the show.</b> Sources are weighted from 1 to 3, and when four or more report, the highest and the lowest are left out of the average.</li>
       <li><b>Confidence means agreement.</b> The odds and the likely range come from 82 alternate model runs; the confidence score is the share of those runs that land near the middle one.</li>
-      <li><b>The BS meter checks resort snow reports.</b> It divides the new snow a resort reports by what the nearest automated snow gauge recorded, and treats anything up to 1.3 times the gauge as honest.</li>
+      <li><b>The BS meter reads what resorts write.</b> It marks the words in a resort's snow report against measured snow, rain, temperature and wind, and scores unearned hype, soft wording and bad weather left out. The resort's snow count is checked separately against the nearest gauge.</li>
       <li><b>What is uncertain.</b> The snow formula was tested on about seven weeks of early-season storms, past days on the timeline are model estimates, and no human forecaster reviews any of it.</li>
     </ul>
     <noscript><p class="meta">The charts on this page are drawn by a small script from the formulas shown. Turn on JavaScript to see them.</p></noscript>
@@ -297,17 +297,56 @@ and the lowest are left out first</pre>
 
   <section class="sec" id="bs-meter" aria-labelledby="h-i">
     <h2 id="h-i">BS meter</h2>
-    <p>The BS meter compares the new snow a resort reports with what the nearest SNOTEL gauge recorded over the same window: the last 24 hours, 48 hours and 7 days. It covers western US resorts with a gauge within 45 km.</p>
+    <p>Resorts write their own snow reports, and a good-sounding report sells tickets. The BS meter reads the written part of the report (the day's description and the surface conditions) and marks the words against what was measured. It sits in each resort's Accuracy report, next to NFOPD's own forecast record. It does not judge the resort's snow numbers; those are checked separately, below.</p>
+    <h3>What it checks the words against</h3>
+    <ul class="plain">
+      <li><b>New snow</b> in the last 24 hours and 3 days: the larger of the nearest SNOTEL gauge (within 45 km) and the model's estimate for the summit. Gauge snow is the larger of its depth gain and ten times its water gain, unless it rained.</li>
+      <li><b>Rain</b> at the base and the summit in the last 24 hours: model precipitation in hours at 34°F or warmer, with a wet-bulb temperature too warm for snow. A 32°F mix isn't called rain.</li>
+      <li><b>Temperature</b>: the base's high and low over the last 24 hours.</li>
+      <li><b>Wind</b>: the strongest gust on the upper mountain over the last 24 hours.</li>
+    </ul>
+    <p>Rain, temperature and wind come from the GFS weather model at the resort's location, not from instruments on the hill, and each receipt says so.</p>
+    <h3>What scores</h3>
+    <div class="table-wrap">
+      <table class="t-bs">
+        <thead><tr><th scope="col">Kind</th><th scope="col">What triggers it</th><th scope="col">Points</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Unearned hype</th><td>Superlatives about the snow or skiing: "great" and "fresh" count 1, "fantastic" and "powder day" 2, "epic" and "all-time" 3. Only the points beyond what the conditions earned count.</td><td>up to 8</td></tr>
+          <tr><th scope="row">Soft-pedalled</th><td>A soft phrase the measurements contradict: "packed powder" with under 2 inches in three days, "spring conditions" from November to February, "showers" when it rained and the report never says rain, "breezy" with gusts of 40 mph or more, "firm" after a thaw and refreeze.</td><td>1 or 2 each</td></tr>
+          <tr><th scope="row">Left out</th><td>Bad weather the report never mentions: 0.1 inch or more of rain at the base (3, or 4 if it rained at the summit too), gusts of 45 mph or more (2), 40°F or warmer at the base with no new snow (1).</td><td>1 to 4 each</td></tr>
+          <tr><th scope="row">Straight talk</th><td>Plain words for bad conditions, such as "rain", "icy", "thin cover", "limited" or "early season". Each takes a point off, up to 4 and never more than half the total.</td><td>−1 each</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre class="formula">earned hype = 1 free point
+  + new snow: 2 for 1 in, 3 for 3 in,
+    4 for 5 in, 6 for 8 in (24 hours);
+    or 1 for 3 in, 2 for 6 in (3 days)
+  − 2 for rain, − 1 for a warm day
+    with no snow, − 1 for high wind
+points = hype used − earned hype
+  + soft-pedalled + left out
+  − straight talk
+score = 10 × points, from 0 to 100</pre>
+    <figure>
+      <p class="fig-t">The scale</p>
+      <div class="chart" id="c-bs"></div>
+      <figcaption>Under 15 is straight talk. It takes 70 or more to be called full BS.<small>Illustrative example: no new snow in three days, and the report says "great conditions", "fantastic skiing" and "packed powder". Hype used is 3 points and 1 is free, so 2 are unearned; "packed powder" adds 2. Four points score 40.</small></figcaption>
+    </figure>
+    <p>Sentences about the forecast or the days ahead aren't judged, and neither is praise for something other than snow (a "great crew", "fresh corduroy"). A resort that isn't open isn't scored. A report with numbers but no written description has nothing to judge.</p>
+    <p>A habit only shows over a season, and early-season reports have little to oversell, so the app keeps one score a day on your device and shows the running average once there are two. A day is recorded only when the weather check loaded. A program reads the words, not a person: it can miss sarcasm, and it can mistake a run's name for a claim.</p>
+    <h3>The snow count check</h3>
+    <p>Separately, the Accuracy report compares the new snow a resort reports with what the nearest SNOTEL gauge recorded over the same window: the last 24 hours, 48 hours and 7 days. It covers western US resorts with a gauge within 45 km.</p>
     <pre class="formula">gauge snow = the larger of
   depth gain  and  10 × water gain
 ratio = reported snow ÷ gauge snow</pre>
     <p>Depth gain is the sum of the gauge's day-over-day rises in snow depth. The snowpack settles while it snows, so depth alone undercounts long storms; water doesn't settle. A window counts only when the report or the gauge snow is 2 inches or more, and gauge snow under 1 inch is treated as 1 inch.</p>
     <figure>
-      <p class="fig-t">The scale</p>
-      <div class="chart" id="c-bs"></div>
+      <p class="fig-t">The count scale</p>
+      <div class="chart" id="c-count"></div>
       <figcaption>A ratio up to 1.3 counts as a straight shooter, because the gauge still reads lower than a fresh count on the upper mountain; it takes more than 1.8 to be called sugar-coated.<small>Illustrative example: the gauge's depth rose 6 inches and its water rose 0.8 inches, so gauge snow is 8 inches (10 × 0.8). A 10-inch report scores 1.25.</small></figcaption>
     </figure>
-    <p>The app saves each day's pair of numbers on your device. Until three snow days have been logged, the verdict is shown as an "Early read" from the longest window available, and it says it is a small sample. After three logged snow days it uses the sum over all of them. If the gauge is more than 8 km from the resort, the meter says to treat it as a rough read. It does not score resorts' own forecasts, which NFOPD doesn't read.</p>
+    <p>Until three snow days have been logged on your device, the count verdict is shown as an "Early read" from the longest window available. After that it uses the sum over all of them. If the gauge is more than 8 km from the resort, it says to treat the result as a rough read.</p>
   </section>
 
   <section class="sec" id="daily" aria-labelledby="h-j">
@@ -702,8 +741,37 @@ ratio = reported snow ÷ gauge snow</pre>
 
   /* ---- 10. BS meter scale ---- */
   chart('c-bs', 640, function (host, w) {
+    var x0 = 2, x1 = w - 2, H = 138, ya = 34, bh = 20;
+    var svg = mk(host, w, H, 'BS meter scale from 0 to 100. Under 15: Straight talk. 15 to 40: Marketing gloss. 40 to 70: Sugar-coated. 70 and over: Full BS. Example: 4 points score 40, Sugar-coated.');
+    var x = lin(0, 100, x0, x1);
+    var bands = [
+      { a: 0, b: 15, name: 'Straight talk', range: 'under 15', c: COL.powder },
+      { a: 15, b: 40, name: 'Marketing gloss', range: '15 to 39', c: '#C9D8E8' },
+      { a: 40, b: 70, name: 'Sugar-coated', range: '40 to 69', c: COL.lamp },
+      { a: 70, b: 100, name: 'Full BS', range: '70 to 100', c: COL.blaze }
+    ];
+    bands.forEach(function (b) {
+      var bx = x(b.a) + 1, bw = x(b.b) - x(b.a) - 2, mid = bx + bw / 2;
+      var rect = s('rect', { x: bx, y: ya, width: bw, height: bh, rx: 4, fill: b.c }, svg);
+      var words = b.name.split(' ');
+      if (words.length > 1 && bw < 112) words.forEach(function (wd, i) { s('text', { x: mid, y: 94 + i * 15, 'text-anchor': 'middle', class: 'st' }, svg, wd); });
+      else s('text', { x: mid, y: 94, 'text-anchor': 'middle', class: 'st' }, svg, b.name);
+      if (b.a > 0) s('text', { x: x(b.a), y: 73, 'text-anchor': 'middle' }, svg, String(b.a));
+      hover(rect, function () { return [[b.name, ''], ['Score ' + b.range, '']]; });
+    });
+    s('text', { x: x0, y: 73 }, svg, '0');
+    s('text', { x: x1, y: 73, 'text-anchor': 'end' }, svg, '100');
+    var ex = x(40) + 3;
+    s('text', { x: x0, y: 14 }, svg, 'Example: 2 unearned + 2 soft-pedalled = 4 points = 40');
+    s('line', { x1: ex, x2: ex, y1: 21, y2: ya + bh + 4, stroke: COL.night, 'stroke-width': 6 }, svg);
+    s('line', { x1: ex, x2: ex, y1: 21, y2: ya + bh + 4, stroke: COL.snow, 'stroke-width': 2 }, svg);
+    s('text', { x: (x0 + x1) / 2, y: 132, 'text-anchor': 'middle' }, svg, 'BS score');
+  });
+
+  /* ---- 10b. Snow count scale ---- */
+  chart('c-count', 640, function (host, w) {
     var x0 = 2, x1 = w - 2, max = 2.6, H = 138, ya = 34, bh = 20;
-    var svg = mk(host, w, H, 'BS meter scale by ratio of reported snow to gauge snow. Under 0.8: Under-reports. 0.8 to 1.3: Straight shooter. 1.3 to 1.8: Generous. Over 1.8: Sugar-coated. Example: 10 inches reported against 8 inches of gauge snow is 1.25, Straight shooter.');
+    var svg = mk(host, w, H, 'Snow count scale by ratio of reported snow to gauge snow. Under 0.8: Under-reports. 0.8 to 1.3: Straight shooter. 1.3 to 1.8: Generous. Over 1.8: Sugar-coated. Example: 10 inches reported against 8 inches of gauge snow is 1.25, Straight shooter.');
     var x = lin(0, max, x0, x1);
     var bands = [
       { a: 0, b: 0.8, name: 'Under-reports', range: 'under 0.8', c: COL.powder },
